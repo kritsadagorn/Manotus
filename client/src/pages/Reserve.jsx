@@ -52,28 +52,20 @@ const Reserve = () => {
 
   // ดึงข้อมูลการจองเมื่อเลือกโรงจอดรถ
   useEffect(() => {
-    const user = JSON.parse(localStorage.getItem("user"));
-    if (!user || !selectedLot) return; // ถ้าไม่ได้ล็อกอินหรือไม่ได้เลือกโรงจอดรถ ไม่ต้องดึงข้อมูล
-
     const fetchReservations = async () => {
-      try {
-        const response = await axios.get(
-          `http://localhost:5000/api/reservations?parking_lot_id=${selectedLot.id}`
-        );
-        setReservations(response.data);
-      } catch (error) {
-        console.error("Failed to fetch reservations:", error);
-      }
+      const response = await axios.get(
+        "http://localhost:5000/api/reservations_slot"
+      );
+      setReservations(response.data);
     };
     fetchReservations();
-  }, [selectedLot]);
+  }, []);
 
   // ตรวจสอบว่าช่องจอดรถว่างหรือไม่
   const isSlotAvailable = (slot) => {
     return !reservations.some((reservation) => reservation.slot === slot);
   };
 
-  // จองที่จอดรถ
   const handleReserve = async () => {
     if (!selectedSlot || !startTime || !endTime) {
       alert("โปรดเลือกตำแหน่งและเวลาเข้า-เวลาออก.");
@@ -90,7 +82,7 @@ const Reserve = () => {
       const response = await axios.post("http://localhost:5000/api/reserve", {
         userId: user.id,
         parkingLotId: selectedLot.id,
-        slot: selectedSlot, // ✅ ส่ง slot ไปด้วย
+        slot: selectedSlot,
         startTime,
         endTime,
         vehicleType,
@@ -115,27 +107,27 @@ const Reserve = () => {
   };
 
   // ตรวจสอบเวลาออกทุกๆ 1 นาที
-  useEffect(() => {
-    const interval = setInterval(async () => {
-      const now = new Date().toISOString();
-      try {
-        await axios.post("http://localhost:5000/api/check-reservations", {
-          now,
-        });
-        // Refresh reservations
-        if (selectedLot) {
-          const res = await axios.get(
-            `http://localhost:5000/api/reservations?parking_lot_id=${selectedLot.id}`
-          );
-          setReservations(res.data);
-        }
-      } catch (error) {
-        console.error("Failed to check reservations:", error);
-      }
-    }, 60000); // ตรวจสอบทุก 1 นาที
+  // useEffect(() => {
+  //   const interval = setInterval(async () => {
+  //     const now = new Date().toISOString();
+  //     try {
+  //       await axios.post("http://localhost:5000/api/check-reservations", {
+  //         now,
+  //       });
+  //       // Refresh reservations
+  //       if (selectedLot) {
+  //         const res = await axios.get(
+  //           `http://localhost:5000/api/reservations?parking_lot_id=${selectedLot.id}`
+  //         );
+  //         setReservations(res.data);
+  //       }
+  //     } catch (error) {
+  //       console.error("Failed to check reservations:", error);
+  //     }
+  //   }, 60000); // ตรวจสอบทุก 1 นาที
 
-    return () => clearInterval(interval); // ลบ interval เมื่อ component ถูกลบ
-  }, [selectedLot]);
+  //   return () => clearInterval(interval); // ลบ interval เมื่อ component ถูกลบ
+  // }, [selectedLot]);
 
   return (
     <div
@@ -167,7 +159,11 @@ const Reserve = () => {
               transition={{ duration: 0.5 }}
             >
               <div className="w-full h-40 bg-gray-300 rounded-lg mb-4 flex items-center justify-center">
-                <span className="text-gray-600">รูปภาพที่จอดรถ</span>
+                <img
+                  src={lot.image_url || "https://via.placeholder.com/400"}
+                  alt={`Parking Lot ${lot.name}`}
+                  className="w-full h-40 object-cover rounded-lg mb-4"
+                />
               </div>
               <h2 className="font-semibold">{lot.name}</h2>
               <p>ความจุ: {lot.max_capacity}</p>
@@ -186,32 +182,32 @@ const Reserve = () => {
           <h2 className="text-xl mb-4">ตำแหน่งของ {selectedLot.name}</h2>
 
           {/* แสดงที่จอดรถ */}
-          <div className="bg-[#a39384] p-4 rounded mb-5">
-            <div className="grid grid-cols-5 gap-4 mb-6">
-              {Array.from(
-                { length: selectedLot.max_capacity },
-                (_, i) => i + 1
-              ).map((slot) => (
-                <motion.div
-                  key={slot}
-                  className={`p-4 border rounded text-center cursor-pointer flex items-center justify-center ${
-                    isSlotAvailable(slot) ? "bg-[#9c7434]" : "bg-[#b2a162]"
-                  }`}
-                  onClick={() => isSlotAvailable(slot) && setSelectedSlot(slot)}
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  whileHover={{ scale: 1.1 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  {isSlotAvailable(slot) ? (
-                    <CheckCircle className="text-white" size={24} />
-                  ) : (
-                    <XCircle className="text-white" size={24} />
-                  )}
-                  <div className="ml-2">{slot}</div>
-                </motion.div>
-              ))}
-            </div>
+          <div className="grid grid-cols-5 gap-4 mb-6">
+            {Array.from(
+              { length: selectedLot.max_capacity },
+              (_, i) => i + 1
+            ).map((slot) => (
+              <motion.div
+                key={slot}
+                className={`p-4 border rounded text-center cursor-pointer flex items-center justify-center ${
+                  isSlotAvailable(slot) ? "bg-[#9c7434]" : "bg-[#b2a162]"
+                } ${
+                  selectedSlot === slot ? "border-4 border-[#f8f246]" : "border"
+                }`}
+                onClick={() => isSlotAvailable(slot) && setSelectedSlot(slot)}
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                whileHover={{ scale: 1.1 }}
+                transition={{ duration: 0.3 }}
+              >
+                {isSlotAvailable(slot) ? (
+                  <CheckCircle className="text-white" size={24} />
+                ) : (
+                  <XCircle className="text-white" size={24} />
+                )}
+                <div className="ml-2">{slot}</div>
+              </motion.div>
+            ))}
           </div>
 
           {/* ฟอร์มจองที่จอดรถ */}

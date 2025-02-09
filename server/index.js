@@ -57,22 +57,6 @@ app.post("/api/login", async (req, res) => {
   });
 });
 
-app.get("/api/user/:id", (req, res) => {
-  const { id } = req.params;
-  const query = "SELECT id, username, email FROM users WHERE id = ?";
-
-  db.query(query, [id], (err, results) => {
-    if (err) {
-      console.error("Error fetching user:", err);
-      return res.status(500).json({ message: "Server error" });
-    }
-    if (results.length === 0) {
-      return res.status(404).json({ message: "User not found" });
-    }
-    res.json(results[0]);
-  });
-});
-
 // API สำหรับดึงข้อมูลที่จอดรถ
 app.get("/api/parking-lots", (req, res) => {
   const query = "SELECT * FROM parking_lots";
@@ -150,32 +134,38 @@ app.post("/api/reserve", (req, res) => {
   );
 });
 
-// API สำหรับยกเลิกการจอง
-app.delete("/api/reserve/:id", (req, res) => {
-  const { id } = req.params;
-  const query = "DELETE FROM reservations WHERE id = ?";
-  db.query(query, [id], (err, results) => {
-    if (err) throw err;
-    res.send({ success: true });
-  });
-});
-
 // API สำหรับดึงข้อมูลการจอง
 app.get("/api/reservations", (req, res) => {
   const { parking_lot_id } = req.query;
-  const query = `
-    SELECT r.id, u.username, r.slot, r.start_time, r.end_time, r.vehicle_type 
-    FROM reservations r
-    JOIN users u ON r.user_id = u.id
-    WHERE r.parking_lot_id = ?
-  `;
 
-  db.query(query, [parking_lot_id], (err, results) => {
+  // ลบรายการที่หมดอายุก่อน
+  const deleteExpiredQuery = `DELETE FROM reservations WHERE end_time < NOW()`;
+  db.query(deleteExpiredQuery, (err, result) => {
     if (err) {
-      console.error("Error fetching reservations:", err);
-      return res.status(500).json({ message: "Server error" });
+      console.error("Error deleting expired reservations:", err);
+      return res
+        .status(500)
+        .json({ message: "Error deleting expired reservations" });
     }
-    res.json(results);
+    console.log("Deleted expired reservations:", result.affectedRows);
+
+    // ดึงรายการที่ยังไม่หมดอายุ
+    const fetchQuery = `
+      SELECT r.id, u.username, r.slot, r.start_time, r.end_time, r.vehicle_type 
+      FROM reservations r
+      JOIN users u ON r.user_id = u.id
+      WHERE r.parking_lot_id = ?
+    `;
+
+    db.query(fetchQuery, [parking_lot_id], (err, results) => {
+      if (err) {
+        console.error("Error fetching reservations:", err);
+        return res.status(500).json({ message: "Server error" });
+      }
+
+      console.log("Updated Reservations Data:", results);
+      res.json(results);
+    });
   });
 });
 
@@ -189,54 +179,62 @@ app.get("/api/reservations_slot", (req, res) => {
 });
 
 // API สำหรับตรวจสอบเวลาออก (ลบการจองที่หมดเวลาแล้ว)
-app.post("/api/check-reservations", (req, res) => {
-  const now = moment.utc().format("YYYY-MM-DD HH:mm:ss"); // ใช้เวลา UTC ป้องกันปัญหา timezone
-
-  db.query(
-    "DELETE FROM reservations WHERE end_time <= ?",
-    [now],
-    (err, results) => {
-      if (err) {
-        console.error("Error deleting expired reservations:", err);
-        return res.status(500).json({ message: "Error checking reservations" });
-      }
-      res.send({ success: true });
-    }
-  );
-});
-
-// เพิ่ม User ใหม่
-app.post("/api/admin/add-user", (req, res) => {
-  const { username, password, role } = req.body;
-  const query = "INSERT INTO users (username, password, role) VALUES (?, ?, ?)";
-  db.query(query, [username, password, role], (err, result) => {
+app.get("/api/admin/reservations", (req, res) => {
+  // ลบรายการที่หมดอายุออกก่อน
+  const deleteExpiredQuery = `DELETE FROM reservations WHERE end_time < NOW()`;
+  db.query(deleteExpiredQuery, (err, result) => {
     if (err) {
-      console.error("Error adding user:", err);
-      return res.status(500).json({ message: "Error adding user" });
+      console.error("Error deleting expired reservations:", err);
+      return res
+        .status(500)
+        .json({ message: "Error deleting expired reservations" });
     }
-    res.status(200).json({ message: "User added successfully" });
+    console.log("Deleted expired reservations:", result.affectedRows);
+
+    // ดึงรายการที่ยังไม่หมดอายุ
+    const fetchQuery = `
+      SELECT 
+        r.id, p.name AS lot, p.slot, u.username AS reserved_user, 
+        r.start_time, r.end_time, r.vehicle_type
+      FROM reservations r
+      JOIN parking_lots p ON r.parking_lot_id = p.id
+      JOIN users u ON r.user_id = u.id
+    `;
+
+    db.query(fetchQuery, (err, results) => {
+      if (err) {
+        console.error("Error fetching reservations:", err);
+        return res.status(500).json({ message: "Error fetching reservations" });
+      }
+
+      console.log("Updated Reservations Data:", results);
+      res.send(results);
+    });
   });
 });
 
 // ดึงข้อมูลการจองทั้งหมด
 app.get("/api/admin/reservations", (req, res) => {
   const query = `
-  SELECT 
-    r.id, p.name AS lot, p.slot, u.username AS reserved_user, 
-    r.start_time, r.end_time, r.vehicle_type, 
-    CASE 
-      WHEN r.end_time > NOW() THEN 'Active'
-      ELSE 'Expired'
-    END AS status
-  FROM reservations r
-  JOIN parking_lots p ON r.parking_lot_id = p.id
-  JOIN users u ON r.user_id = u.id
+    SELECT 
+      r.id, p.name AS lot, r.slot, u.username AS reserved_user, 
+      r.start_time, r.end_time, r.vehicle_type,
+      CASE 
+        WHEN r.end_time < NOW() THEN 'Expired' 
+        ELSE 'Active' 
+      END AS status
+    FROM reservations r
+    JOIN parking_lots p ON r.parking_lot_id = p.id
+    JOIN users u ON r.user_id = u.id
   `;
+
   db.query(query, (err, results) => {
     if (err) {
       console.error("Error fetching reservations:", err);
       return res.status(500).json({ message: "Error fetching reservations" });
     }
+
+    console.log("Updated Reservations Data:", results); // ✅ ตรวจสอบข้อมูล
     res.send(results);
   });
 });
@@ -251,6 +249,66 @@ app.delete("/api/admin/delete-reservation/:id", (req, res) => {
       return res.status(500).json({ message: "Error deleting reservation" });
     }
     res.status(200).json({ message: "Reservation deleted successfully" });
+  });
+});
+
+
+// API สำหรับดึงข้อมูล parking_lots ทั้งหมด
+app.get("/api/admin/parking-lots", (req, res) => {
+  const query = "SELECT * FROM parking_lots";
+  db.query(query, (err, results) => {
+    if (err) {
+      console.error("Error fetching parking lots:", err);
+      return res.status(500).json({ message: "Error fetching parking lots" });
+    }
+    res.send(results);
+  });
+});
+
+// API สำหรับเพิ่ม parking_lots
+app.post("/api/admin/add-parking-lot", (req, res) => {
+  const { name, max_capacity, allowed_roles, vehicle_type, image_url } = req.body;
+  const query = `
+    INSERT INTO parking_lots (name, max_capacity, allowed_roles, vehicle_type, image_url) 
+    VALUES (?, ?, ?, ?, ?)
+  `;
+  db.query(query, [name, max_capacity, allowed_roles, vehicle_type, image_url], (err, result) => {
+    if (err) {
+      console.error("Error adding parking lot:", err);
+      return res.status(500).json({ message: "Error adding parking lot" });
+    }
+    res.status(200).json({ message: "Parking lot added successfully" });
+  });
+});
+
+// API สำหรับแก้ไข parking_lots
+app.put("/api/admin/update-parking-lot/:id", (req, res) => {
+  const { id } = req.params;
+  const { name, max_capacity, allowed_roles, vehicle_type, image_url } = req.body;
+  const query = `
+    UPDATE parking_lots 
+    SET name = ?, max_capacity = ?, allowed_roles = ?, vehicle_type = ?, image_url = ?
+    WHERE id = ?
+  `;
+  db.query(query, [name, max_capacity, allowed_roles, vehicle_type, image_url, id], (err, result) => {
+    if (err) {
+      console.error("Error updating parking lot:", err);
+      return res.status(500).json({ message: "Error updating parking lot" });
+    }
+    res.status(200).json({ message: "Parking lot updated successfully" });
+  });
+});
+
+// API สำหรับลบ parking_lots
+app.delete("/api/admin/delete-parking-lot/:id", (req, res) => {
+  const { id } = req.params;
+  const query = "DELETE FROM parking_lots WHERE id = ?";
+  db.query(query, [id], (err, result) => {
+    if (err) {
+      console.error("Error deleting parking lot:", err);
+      return res.status(500).json({ message: "Error deleting parking lot" });
+    }
+    res.status(200).json({ message: "Parking lot deleted successfully" });
   });
 });
 
