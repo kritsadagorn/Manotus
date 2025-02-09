@@ -1,0 +1,8 @@
+@import "tailwindcss";
+
+body::before {
+    content: "";
+    @apply absolute inset-0 backdrop-blur-md;
+    z-index: -1;
+}
+    
