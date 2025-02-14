@@ -137,6 +137,16 @@ const Reserve = () => {
     return () => clearInterval(interval); // ลบ interval เมื่อ component ถูกลบ
   }, [selectedLot]);
 
+  useEffect(() => {
+    fetch("http://localhost:5000/api/reservations")
+      .then((res) => res.json())
+      .then((data) => {
+        console.log("Reservations Data:", data); // เช็คข้อมูลที่ได้จาก API
+        setReservations(data);
+      })
+      .catch((err) => console.error("Error fetching reservations:", err));
+  }, []);
+
   return (
     <div
       className="p-6 min-h-screen"
@@ -167,7 +177,11 @@ const Reserve = () => {
               transition={{ duration: 0.5 }}
             >
               <div className="w-full h-40 bg-gray-300 rounded-lg mb-4 flex items-center justify-center">
-                <span className="text-gray-600">รูปภาพที่จอดรถ</span>
+                <img
+                  src={lot.image_url || "https://via.placeholder.com/400"}
+                  alt={`Parking Lot ${lot.name}`}
+                  className="w-full h-40 object-cover rounded-lg mb-4"
+                />
               </div>
               <h2 className="font-semibold">{lot.name}</h2>
               <p>ความจุ: {lot.max_capacity}</p>
@@ -196,6 +210,8 @@ const Reserve = () => {
                   key={slot}
                   className={`p-4 border rounded text-center cursor-pointer flex items-center justify-center ${
                     isSlotAvailable(slot) ? "bg-[#9c7434]" : "bg-[#b2a162]"
+                  } ${
+                    selectedSlot === slot ? "border-4 border-[#862121]" : ""
                   }`}
                   onClick={() => isSlotAvailable(slot) && setSelectedSlot(slot)}
                   initial={{ opacity: 0, scale: 0.8 }}
