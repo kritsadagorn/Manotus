@@ -35,7 +35,7 @@ const Admin = () => {
   // โหลดข้อมูล parking_lots
   const fetchParkingLots = async () => {
     try {
-      const res = await fetch("http://localhost:5000/api/admin/parking-lots");
+      const res = await fetch("http://localhost:5000/api/parking-lots");
       const data = await res.json();
       setParkingLots(data);
     } catch (error) {
