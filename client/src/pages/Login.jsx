@@ -45,31 +45,38 @@ const Login = () => {
   };
 
   return (
-    <div className="max-w-md mx-auto mt-10 p-6 bg-gray-100 rounded-lg shadow-md">
-      <h2 className="text-2xl font-bold text-center">Login</h2>
-      <form onSubmit={handleLogin} className="mt-4">
-        <input
-          type="text"
-          placeholder="Username"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-          className="w-full p-2 border rounded mb-3"
-        />
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className="w-full p-2 border rounded mb-3"
-        />
-        <button
-          type="submit"
-          className="w-full bg-blue-500 text-white py-2 rounded"
-        >
-          Login
-        </button>
-      </form>
-    </div>
+    <>
+    <style>
+        {`
+          @import url('https://fonts.googleapis.com/css2?family=Kanit:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
+        `}
+      </style>
+      <div className="max-w-md mx-auto mt-10 p-6 bg-gray-100 rounded-lg shadow-md" style={{ fontFamily: 'Kanit, sans-serif' }}>
+        <h2 className="text-2xl font-bold text-center">Login</h2>
+        <form onSubmit={handleLogin} className="mt-4">
+          <input
+            type="text"
+            placeholder="Username"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            className="w-full p-2 border rounded mb-3"
+          />
+          <input
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="w-full p-2 border rounded mb-3"
+          />
+          <button
+            type="submit"
+            className="w-full bg-blue-500 text-white py-2 rounded"
+          >
+            Login
+          </button>
+        </form>
+      </div>
+    </>
   );
 };
 

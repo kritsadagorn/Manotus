@@ -64,7 +64,7 @@ CREATE TABLE `reservations` (
   CONSTRAINT `reservations_ibfk_2` FOREIGN KEY (`parking_lot_id`) REFERENCES `parking_lots` (`id`)
 ) ;
 
-SHOW TABLE;
+SHOW TABLES;
 ```
 
 ```
@@ -75,7 +75,7 @@ DESC table_name;
 Change 'table_name' instead of ur table name
 ```
 
-Create ADMIN USER !! IMPORTANT
+Create ADMIN USER !! **IMPORTANT**
 ```
 USE parking_db;
 INSERT INTO users (username, password, role) VALUES ('admin','admin','teacher');

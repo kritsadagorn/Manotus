@@ -148,9 +148,15 @@ const Reserve = () => {
   }, []);
 
   return (
+    <>
+    <style>
+        {`
+          @import url('https://fonts.googleapis.com/css2?family=Kanit:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
+        `}
+      </style>
     <div
       className="p-6 min-h-screen"
-      style={{ backgroundColor: "#6a4c34", color: "#ffffff" }}
+      style={{ backgroundColor: "#6a4c34", color: "#ffffff", fontFamily: 'Kanit, sans-serif'}}
     >
       <motion.h1
         className="text-3xl font-bold mb-6 text-center"
@@ -320,6 +326,7 @@ const Reserve = () => {
         </div>
       )}
     </div>
+    </>
   );
 };
 
