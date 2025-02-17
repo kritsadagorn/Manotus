@@ -112,7 +112,7 @@ const Home = () => {
                   <img
                     src={lot.image_url || "https://via.placeholder.com/400"}
                     alt={`Parking Lot ${lot.name}`}
-                    className="w-full h-40 object-cover rounded-lg mb-4"
+                    className="w-full h-40 object-contain rounded-lg mb-4"
                   />
                 </div>
                 <h2 className="text-2xl font-semibold mb-2">{lot.name}</h2>
