@@ -117,7 +117,7 @@ const Reserve = () => {
   // ตรวจสอบเวลาออกทุกๆ 1 นาที
   useEffect(() => {
     const interval = setInterval(async () => {
-      const now = new Date().toISOString();
+      const now = moment.utc().format("YYYY-MM-DD HH:mm:ss"); // ใช้เวลาปัจจุบันใน UTC
       try {
         await axios.post("http://localhost:5000/api/check-reservations", {
           now,
@@ -132,9 +132,7 @@ const Reserve = () => {
       } catch (error) {
         console.error("Failed to check reservations:", error);
       }
-    }, 60000); // ตรวจสอบทุก 1 นาที
-
-    return () => clearInterval(interval); // ลบ interval เมื่อ component ถูกลบ
+    }, 500);
   }, [selectedLot]);
 
   useEffect(() => {
@@ -234,9 +232,9 @@ const Reserve = () => {
                     transition={{ duration: 0.3 }}
                   >
                     {isSlotAvailable(slot) ? (
-                      <CheckCircle className="text-gray-400" size={24} />
+                      <CheckCircle className="text-gray-500" size={24} />
                     ) : (
-                      <XCircle className="text-gray-400" size={24} />
+                      <XCircle className="text-gray-500" size={24} />
                     )}
                     <div className="ml-2">{slot}</div>
                   </motion.div>

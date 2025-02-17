@@ -47,6 +47,7 @@ const Admin = () => {
     fetchReservations();
     fetchParkingLots();
   }, []);
+  
   // ฟังก์ชันเพิ่ม User
   const handleAddUser = async (e) => {
     e.preventDefault();
@@ -297,7 +298,7 @@ const Admin = () => {
             <table className="min-w-full bg-white border">
               <thead>
                 <tr className="bg-gray-200 text-gray-600 uppercase text-sm leading-normal">
-                  <th className="py-2 px-4 border">Lot</th>
+                  <th className="py-2 px-4 border">ID</th>
                   <th className="py-2 px-4 border">Slot</th>
                   <th className="py-2 px-4 border">Reserved User</th>
                   <th className="py-2 px-4 border">Start Time</th>
@@ -310,9 +311,9 @@ const Admin = () => {
               <tbody>
                 {reservations.map((res) => (
                   <tr key={res.id} className="border-b">
-                    <td className="py-2 px-4 border">{res.lot}</td>
+                    <td className="py-2 px-4 border">{res.id}</td>
                     <td className="py-2 px-4 border">{res.slot}</td>
-                    <td className="py-2 px-4 border">{res.reserved_user}</td>
+                    <td className="py-2 px-4 border">{res.username}</td>
                     <td className="py-2 px-4 border">{res.start_time}</td>
                     <td className="py-2 px-4 border">{res.end_time}</td>
                     <td className="py-2 px-4 border">{res.vehicle_type}</td>
@@ -340,6 +341,7 @@ const Admin = () => {
           </div>
         </div>
       </div>
+      <a href="https://pic.in.th/?lang=th">Upload Picture</a>
     </>
   );
 };

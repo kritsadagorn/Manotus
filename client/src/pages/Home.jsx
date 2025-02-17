@@ -2,14 +2,15 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { motion } from "framer-motion";
 import { CheckCircle, XCircle, Loader2 } from "lucide-react";
+import { Dialog } from "@headlessui/react";
 
 const themeColors = {
-  background: "#f0f4f8", // สีพื้นหลังอ่อนๆ เพื่อให้อ่านง่าย
-  text: "#2d3748", // สีข้อความเข้มเพื่อความชัดเจน
-  available: "#48bb78", // สีเขียวสื่อถึงที่จอดว่าง
-  reserved: "#f56565", // สีแดงสื่อถึงที่จอดถูกจองแล้ว
-  border: "#e2e8f0", // สีเส้นขอบอ่อนๆ
-  loading: "#4a5568", // สีสำหรับสถานะ loading
+  background: "#f0f4f8",
+  text: "#2d3748",
+  available: "#48bb78",
+  reserved: "#f56565",
+  border: "#e2e8f0",
+  loading: "#4a5568",
 };
 
 const Home = () => {
@@ -17,6 +18,8 @@ const Home = () => {
   const [reservations, setReservations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isOpen, setIsOpen] = useState(false);
+  const [selectedImage, setSelectedImage] = useState("");
 
   useEffect(() => {
     const fetchData = async () => {
@@ -46,6 +49,16 @@ const Home = () => {
     return { totalSlots, reservedSlots, availableSlots };
   };
 
+  const openModal = (imageUrl) => {
+    setSelectedImage(imageUrl);
+    setIsOpen(true);
+  };
+
+  const closeModal = () => {
+    setIsOpen(false);
+    setSelectedImage("");
+  };
+
   if (loading) {
     return (
       <div
@@ -70,7 +83,7 @@ const Home = () => {
 
   return (
     <>
-    <style>
+      <style>
         {`
           @import url('https://fonts.googleapis.com/css2?family=Kanit:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
         `}
@@ -112,7 +125,8 @@ const Home = () => {
                   <img
                     src={lot.image_url || "https://via.placeholder.com/400"}
                     alt={`Parking Lot ${lot.name}`}
-                    className="w-full h-40 object-contain rounded-lg mb-4"
+                    className="w-full h-full object-cover rounded-lg mb-4 cursor-pointer"
+                    onClick={() => openModal(lot.image_url)}
                   />
                 </div>
                 <h2 className="text-2xl font-semibold mb-2">{lot.name}</h2>
@@ -160,7 +174,27 @@ const Home = () => {
           })
         )}
       </div>
-      </>
+
+      {/* Modal สำหรับแสดงรูปภาพใหญ่ */}
+      <Dialog open={isOpen} onClose={closeModal} className="relative z-50">
+        <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
+        <div className="fixed inset-0 flex items-center justify-center p-4">
+          <Dialog.Panel className="w-full max-w-3xl rounded-lg bg-white p-6">
+            <img
+              src={selectedImage}
+              alt="Selected Parking Lot"
+              className="w-full h-full object-cover rounded-lg"
+            />
+            <button
+              onClick={closeModal}
+              className="mt-4 px-4 py-2 bg-red-500 text-white rounded-lg cursor-pointer"
+            >
+              ปิด
+            </button>
+          </Dialog.Panel>
+        </div>
+      </Dialog>
+    </>
   );
 };
 

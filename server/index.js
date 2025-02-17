@@ -83,12 +83,9 @@ app.get("/api/parking-lots", (req, res) => {
 });
 
 // API สำหรับจองที่จอดรถ
-app.post("/api/reserve", (req, res) => {
-  const { userId, parkingLotId, slot, vehicleType, startTime, endTime } =
-    req.body;
-  const formattedStartTime = moment
-    .utc(startTime)
-    .format("YYYY-MM-DD HH:mm:ss");
+app.post("/api/reserve", (req, res) => { 
+  const { userId, parkingLotId, slot, vehicleType, startTime, endTime } = req.body;
+  const formattedStartTime = moment.utc(startTime).format("YYYY-MM-DD HH:mm:ss");
   const formattedEndTime = moment.utc(endTime).format("YYYY-MM-DD HH:mm:ss");
 
   // ตรวจสอบว่ามีการจองในช่วงเวลานี้อยู่แล้วหรือไม่
@@ -119,33 +116,68 @@ app.post("/api/reserve", (req, res) => {
 
       if (results.length > 0) {
         return res.status(400).json({
-          message: "This slot is already reserved during this time",
+          message: "ช่องที่เลือกได้มีการจองในเวลานี้แล้ว",
         });
       }
 
-      // ถ้าไม่มีการจอง -> บันทึกการจอง
-      const insertQuery = `
-        INSERT INTO reservations (user_id, parking_lot_id, slot, vehicle_type, start_time, end_time) 
-        VALUES (?, ?, ?, ?, ?, ?)
+      // ตรวจสอบว่า role ของผู้ใช้ตรงกับ allowed_role ใน parking_lot หรือไม่
+      const checkRoleQuery = `
+        SELECT p.allowed_roles, u.role, p.vehicle_type 
+        FROM parking_lots p
+        JOIN users u ON u.id = ?
+        WHERE p.id = ?
       `;
-      db.query(
-        insertQuery,
-        [
-          userId,
-          parkingLotId,
-          slot,
-          vehicleType,
-          formattedStartTime,
-          formattedEndTime,
-        ],
-        (err, result) => {
-          if (err) {
-            console.error("Reservation failed:", err);
-            return res.status(500).json({ message: "Reservation failed" });
-          }
-          res.status(200).json({ message: "Reservation successful" });
+
+      db.query(checkRoleQuery, [userId, parkingLotId], (err, roleResults) => {
+        if (err) {
+          console.error("Error checking user role:", err);
+          return res.status(500).json({ message: "Server error" });
         }
-      );
+
+        if (roleResults.length === 0) {
+          return res.status(400).json({ message: "Parking lot not found" });
+        }
+
+        const { allowed_roles, role, vehicle_type: allowedVehicleType } = roleResults[0];
+
+        // ตรวจสอบว่า role ของผู้ใช้ตรงกับ allowed_roles หรือไม่
+        if (allowed_roles !== "both" && !allowed_roles.includes(role)) {
+          return res.status(403).json({
+            message: `บทบาท (${role}) ไม่สามารถจอดที่จุดนี้ได้`,
+          });
+        }
+
+        // ตรวจสอบว่า vehicle_type ตรงกับที่อนุญาตใน parking_lot หรือไม่
+        if (allowedVehicleType !== "All" && allowedVehicleType !== vehicleType) {
+          return res.status(403).json({
+            message: `ประเภทยานพาหนะของคุณ (${vehicleType}) ไม่สามารถจอดที่จุดนี้ได้`,
+          });
+        }
+
+        // ถ้าไม่มีการจองซ้ำ และ role ตรงกับ allowed_role และ vehicle_type ตรง -> บันทึกการจอง
+        const insertQuery = `
+          INSERT INTO reservations (user_id, parking_lot_id, slot, vehicle_type, start_time, end_time) 
+          VALUES (?, ?, ?, ?, ?, ?)
+        `;
+        db.query(
+          insertQuery,
+          [
+            userId,
+            parkingLotId,
+            slot,
+            vehicleType,
+            formattedStartTime,
+            formattedEndTime,
+          ],
+          (err, result) => {
+            if (err) {
+              console.error("Reservation failed:", err);
+              return res.status(500).json({ message: "จองที่จอดไม่สำเร็จ! ❌" });
+            }
+            res.status(200).json({ message: "จองที่จอดสำเร็จ! ✅" });
+          }
+        );
+      });
     }
   );
 });
@@ -186,16 +218,33 @@ app.get("/api/reservations", (req, res) => {
 
 // API สำหรับดึงข้อมูลการจองทั้งหมด
 app.get("/api/reservations_slot", (req, res) => {
-  const query = "SELECT * FROM reservations";
+  const query = `
+    SELECT 
+      r.id, 
+      r.parking_lot_id, 
+      r.slot, 
+      u.username, 
+      r.start_time, 
+      r.end_time, 
+      r.vehicle_type, 
+      r.status
+    FROM reservations r
+    LEFT JOIN users u ON r.user_id = u.id
+  `;
+  
   db.query(query, (err, results) => {
-    if (err) throw err;
-    res.send(results);
+    if (err) {
+      console.error("Database error:", err);
+      res.status(500).json({ error: "Internal Server Error" });
+    } else {
+      res.json(results);
+    }
   });
 });
 
 // API สำหรับตรวจสอบเวลาออก (ลบการจองที่หมดเวลาแล้ว)
 app.post("/api/check-reservations", (req, res) => {
-  const now = moment().format("YYYY-MM-DD HH:mm:ss"); // ใช้เวลาปัจจุบัน (ไม่ใช้ UTC)
+  const now = moment.utc().format("YYYY-MM-DD HH:mm:ss"); // ใช้เวลาปัจจุบันใน UTC
 
   db.query(
     "DELETE FROM reservations WHERE end_time <= ?",
