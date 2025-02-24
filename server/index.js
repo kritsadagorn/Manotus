@@ -2,7 +2,8 @@ const express = require("express");
 const mysql = require("mysql2");
 const cors = require("cors");
 const bodyParser = require("body-parser");
-const moment = require("moment");
+// const moment = require("moment");
+const moment = require('moment-timezone');
 
 const app = express();
 app.use(cors());
@@ -85,9 +86,28 @@ app.get("/api/parking-lots", (req, res) => {
 // API สำหรับจองที่จอดรถ
 app.post("/api/reserve", (req, res) => { 
   const { userId, parkingLotId, slot, vehicleType, startTime, endTime } = req.body;
-  const formattedStartTime = moment.utc(startTime).format("YYYY-MM-DD HH:mm:ss");
-  const formattedEndTime = moment.utc(endTime).format("YYYY-MM-DD HH:mm:ss");
 
+  // ❌ ลบ moment.utc() ออก เพราะ Front-end ส่งเวลาเป็นไทยอยู่แล้ว
+  const formattedStartTime = moment(startTime).format("YYYY-MM-DD HH:mm:ss");
+  const formattedEndTime = moment(endTime).format("YYYY-MM-DD HH:mm:ss");
+
+  console.log("Start Time from Frontend:", startTime);
+  console.log("End Time from Frontend:", endTime);
+  console.log("Formatted Start Time (Saved to DB):", formattedStartTime);
+  console.log("Formatted End Time (Saved to DB):", formattedEndTime);
+
+  const now = moment().format("YYYY-MM-DD HH:mm:ss"); // เวลาปัจจุบัน
+
+
+  // ตรวจสอบว่าเวลาเข้าและเวลาออกไม่เป็นเวลาที่ผ่านมาแล้ว
+  if (formattedStartTime < now || formattedEndTime < now) {
+    return res.status(400).json({ message: "ไม่สามารถจองเวลาในอดีตได้" });
+  }
+
+  if (formattedStartTime >= formattedEndTime) {
+    return res.status(400).json({ message: "เวลาเข้าไม่สามารถเกินเวลาออกได้" });
+  }
+  
   // ตรวจสอบว่ามีการจองในช่วงเวลานี้อยู่แล้วหรือไม่
   const checkQuery = `
     SELECT * FROM reservations 
@@ -211,10 +231,21 @@ app.get("/api/reservations", (req, res) => {
       console.error("Error fetching reservations:", err);
       return res.status(500).json({ message: "Server error" });
     }
-    console.log("API Data:", results); // ✅ Debugging
-    res.json(results);
+
+    // 🕒 แปลงเวลาจาก UTC → Bangkok Time
+    const reservationsWithBangkokTime = results.map((reservation) => {
+      return {
+        ...reservation,
+        start_time: moment.utc(reservation.start_time).tz("Asia/Bangkok").format("YYYY-MM-DD HH:mm:ss"),
+        end_time: moment.utc(reservation.end_time).tz("Asia/Bangkok").format("YYYY-MM-DD HH:mm:ss"),
+      };
+    });
+
+    console.log("Converted Bangkok Time:", reservationsWithBangkokTime); // ✅ Debugging
+    res.json(reservationsWithBangkokTime);
   });
 });
+
 
 // API สำหรับดึงข้อมูลการจองทั้งหมด
 app.get("/api/reservations_slot", (req, res) => {
@@ -235,16 +266,39 @@ app.get("/api/reservations_slot", (req, res) => {
   db.query(query, (err, results) => {
     if (err) {
       console.error("Database error:", err);
-      res.status(500).json({ error: "Internal Server Error" });
-    } else {
-      res.json(results);
+      return res.status(500).json({ error: "Internal Server Error" });
     }
+
+    // 🕒 แปลงเวลาจาก UTC → Bangkok Time
+    const reservationsWithBangkokTime = results.map(reservation => ({
+      ...reservation,
+      start_time: moment.utc(reservation.start_time).tz("Asia/Bangkok").format("YYYY-MM-DD HH:mm:ss"),
+      end_time: moment.utc(reservation.end_time).tz("Asia/Bangkok").format("YYYY-MM-DD HH:mm:ss"),
+    }));
+
+    res.json(reservationsWithBangkokTime);
   });
 });
 
-// API สำหรับตรวจสอบเวลาออก (ลบการจองที่หมดเวลาแล้ว)
+app.get("/api/user-reservations/:userId", (req, res) => {
+  const { userId } = req.params;
+  const query = `
+    SELECT * FROM reservations 
+    WHERE user_id = ? AND end_time > NOW()
+  `;
+
+  db.query(query, [userId], (err, results) => {
+    if (err) {
+      console.error("Error checking user reservations:", err);
+      return res.status(500).json({ message: "Server error" });
+    }
+    res.json(results);
+  });
+});
+
+
 app.post("/api/check-reservations", (req, res) => {
-  const now = moment.utc().format("YYYY-MM-DD HH:mm:ss"); // ใช้เวลาปัจจุบันใน UTC
+  const now = moment().format("YYYY-MM-DD HH:mm:ss"); // เวลาปัจจุบัน
 
   db.query(
     "DELETE FROM reservations WHERE end_time <= ?",
@@ -254,8 +308,9 @@ app.post("/api/check-reservations", (req, res) => {
         console.error("Error deleting expired reservations:", err);
         return res.status(500).json({ message: "Error checking reservations" });
       }
+
       console.log(`Deleted ${results.affectedRows} expired reservations.`);
-      res.send({ success: true, deleted: results.affectedRows });
+      res.json({ success: true, deleted: results.affectedRows });
     }
   );
 });
@@ -277,7 +332,7 @@ app.post("/api/admin/add-user", (req, res) => {
 app.get("/api/admin/reservations", (req, res) => {
   const query = `
   SELECT 
-    r.id, p.name AS lot, p.slot, u.username AS reserved_user, 
+    r.id, p.name AS lot, r.slot, u.username AS reserved_user, 
     r.start_time, r.end_time, r.vehicle_type, 
     CASE 
       WHEN r.end_time > NOW() THEN 'Active'
@@ -287,14 +342,24 @@ app.get("/api/admin/reservations", (req, res) => {
   JOIN parking_lots p ON r.parking_lot_id = p.id
   JOIN users u ON r.user_id = u.id
   `;
+  
   db.query(query, (err, results) => {
     if (err) {
       console.error("Error fetching reservations:", err);
       return res.status(500).json({ message: "Error fetching reservations" });
     }
-    res.send(results);
+
+    // 🕒 แปลงจาก UTC → Bangkok Time
+    const reservationsWithBangkokTime = results.map(reservation => ({
+      ...reservation,
+      start_time: moment.utc(reservation.start_time).tz("Asia/Bangkok").format("YYYY-MM-DD HH:mm:ss"),
+      end_time: moment.utc(reservation.end_time).tz("Asia/Bangkok").format("YYYY-MM-DD HH:mm:ss"),
+    }));
+
+    res.send(reservationsWithBangkokTime);
   });
 });
+
 
 app.delete("/api/admin/delete-reservation/:id", (req, res) => {
   const { id } = req.params;

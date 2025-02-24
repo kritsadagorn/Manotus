@@ -165,8 +165,8 @@ const Admin = () => {
               onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}
               className="w-full p-2 border rounded  "
             >
-              <option value="user">student</option>
-              <option value="admin">teacher</option>
+              <option value="student">student</option>
+              <option value="teacher">teacher</option>
             </select>
             <button
               type="submit"
@@ -304,7 +304,7 @@ const Admin = () => {
                   <th className="py-2 px-4 border">Start Time</th>
                   <th className="py-2 px-4 border">End Time</th>
                   <th className="py-2 px-4 border">Vehicle Type</th>
-                  <th className="py-2 px-4 border">Status</th>
+                  {/* <th className="py-2 px-4 border">Status</th> */}
                   <th className="py-2 px-4 border">Actions</th>
                 </tr>
               </thead>
@@ -317,7 +317,7 @@ const Admin = () => {
                     <td className="py-2 px-4 border">{res.start_time}</td>
                     <td className="py-2 px-4 border">{res.end_time}</td>
                     <td className="py-2 px-4 border">{res.vehicle_type}</td>
-                    <td
+                    {/* <td
                       className={`py-2 px-4 border ${
                         res.status === "Expired"
                           ? "text-red-500"
@@ -325,7 +325,7 @@ const Admin = () => {
                       }`}
                     >
                       {res.status}
-                    </td>
+                    </td> */}
                     <td className="py-2 px-4 border">
                       <button
                         onClick={() => handleDeleteReservation(res.id)}

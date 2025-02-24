@@ -3,6 +3,7 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { CheckCircle, XCircle } from "lucide-react";
+import moment from 'moment-timezone';
 
 const themeColors = {
   background: "#f0f4f8", // สีพื้นหลังอ่อนๆ เพื่อให้อ่านง่าย
@@ -73,34 +74,45 @@ const Reserve = () => {
     return !reservations.some((reservation) => reservation.slot === slot);
   };
 
-  // จองที่จอดรถ
   const handleReserve = async () => {
-    if (!selectedSlot || !startTime || !endTime) {
-      alert("โปรดเลือกตำแหน่งและเวลาเข้า-เวลาออก.");
-      return;
-    }
-
     const user = JSON.parse(localStorage.getItem("user"));
     if (!user) {
       alert("โปรดเข้าสู่ระบบก่อนจอง.");
       return;
     }
-
+  
+    if (!selectedSlot || !startTime || !endTime) {
+      alert("โปรดเลือกตำแหน่งและเวลาเข้า-เวลาออก.");
+      return;
+    }
+  
+    console.log("Start Time from Input:", startTime);
+    console.log("End Time from Input:", endTime);
+  
     try {
+      // ✅ เช็คว่าผู้ใช้มีการจองที่อื่นแล้วหรือยัง
+      const userReservations = await axios.get(`http://localhost:5000/api/user-reservations/${user.id}`);
+      
+      if (userReservations.data.length > 0) {
+        alert("คุณมีการจองที่จอดอยู่แล้ว ไม่สามารถจองใหม่ได้.");
+        return;
+      }
+  
+      // ✅ ดำเนินการจองถ้ายังไม่มีการจอง
       const response = await axios.post("http://localhost:5000/api/reserve", {
         userId: user.id,
         parkingLotId: selectedLot.id,
-        slot: selectedSlot, // ✅ ส่ง slot ไปด้วย
-        startTime,
-        endTime,
+        slot: selectedSlot,
+        startTime: startTime, 
+        endTime: endTime, 
         vehicleType,
       });
-
+  
       alert("จองที่จอดรถเรียบร้อย!");
       setSelectedSlot(null);
       setStartTime("");
       setEndTime("");
-
+  
       // Refresh reservations
       const res = await axios.get(
         `http://localhost:5000/api/reservations?parking_lot_id=${selectedLot.id}`
@@ -108,21 +120,18 @@ const Reserve = () => {
       setReservations(res.data);
     } catch (error) {
       console.error("Reservation failed:", error);
-      alert(
-        error.response?.data?.message || "การจองผิดพลาด โปรดลองใหม่อีกครั้ง."
-      );
+      alert(error.response?.data?.message || "การจองผิดพลาด โปรดลองใหม่อีกครั้ง.");
     }
-  };
-
+  };  
+  
   // ตรวจสอบเวลาออกทุกๆ 1 นาที
   useEffect(() => {
     const interval = setInterval(async () => {
-      const now = moment.utc().format("YYYY-MM-DD HH:mm:ss"); // ใช้เวลาปัจจุบันใน UTC
+      const now = moment.utc().format("YYYY-MM-DD HH:mm:ss"); // Use UTC time
+      console.log('Check')
       try {
-        await axios.post("http://localhost:5000/api/check-reservations", {
-          now,
-        });
-        // Refresh reservations
+        await axios.post("http://localhost:5000/api/check-reservations", { now });
+  
         if (selectedLot) {
           const res = await axios.get(
             `http://localhost:5000/api/reservations?parking_lot_id=${selectedLot.id}`
@@ -132,8 +141,10 @@ const Reserve = () => {
       } catch (error) {
         console.error("Failed to check reservations:", error);
       }
-    }, 500);
-  }, [selectedLot]);
+    }, 10000);
+    
+    return () => clearInterval(interval);
+  }, [selectedLot]);  
 
   useEffect(() => {
     fetch("http://localhost:5000/api/reservations")
@@ -330,10 +341,10 @@ const Reserve = () => {
                         {reservation.slot || "N/A"}
                       </td>
                       <td className="border border-[${themeColors.border}] p-2">
-                        {new Date(reservation.start_time).toLocaleString()}
+                      {reservation.start_time}
                       </td>
                       <td className="border border-[${themeColors.border}] p-2">
-                        {new Date(reservation.end_time).toLocaleString()}
+                      {reservation.end_time}
                       </td>
                     </tr>
                   ))}
