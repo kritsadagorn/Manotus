@@ -3,7 +3,7 @@ const mysql = require("mysql2");
 const cors = require("cors");
 const bodyParser = require("body-parser");
 // const moment = require("moment");
-const moment = require('moment-timezone');
+const moment = require("moment-timezone");
 
 const app = express();
 app.use(cors());
@@ -84,8 +84,9 @@ app.get("/api/parking-lots", (req, res) => {
 });
 
 // API สำหรับจองที่จอดรถ
-app.post("/api/reserve", (req, res) => { 
-  const { userId, parkingLotId, slot, vehicleType, startTime, endTime } = req.body;
+app.post("/api/reserve", (req, res) => {
+  const { userId, parkingLotId, slot, vehicleType, startTime, endTime } =
+    req.body;
 
   // ❌ ลบ moment.utc() ออก เพราะ Front-end ส่งเวลาเป็นไทยอยู่แล้ว
   const formattedStartTime = moment(startTime).format("YYYY-MM-DD HH:mm:ss");
@@ -98,7 +99,6 @@ app.post("/api/reserve", (req, res) => {
 
   const now = moment().format("YYYY-MM-DD HH:mm:ss"); // เวลาปัจจุบัน
 
-
   // ตรวจสอบว่าเวลาเข้าและเวลาออกไม่เป็นเวลาที่ผ่านมาแล้ว
   if (formattedStartTime < now || formattedEndTime < now) {
     return res.status(400).json({ message: "ไม่สามารถจองเวลาในอดีตได้" });
@@ -107,7 +107,7 @@ app.post("/api/reserve", (req, res) => {
   if (formattedStartTime >= formattedEndTime) {
     return res.status(400).json({ message: "เวลาเข้าไม่สามารถเกินเวลาออกได้" });
   }
-  
+
   // ตรวจสอบว่ามีการจองในช่วงเวลานี้อยู่แล้วหรือไม่
   const checkQuery = `
     SELECT * FROM reservations 
@@ -142,11 +142,11 @@ app.post("/api/reserve", (req, res) => {
 
       // ตรวจสอบว่า role ของผู้ใช้ตรงกับ allowed_role ใน parking_lot หรือไม่
       const checkRoleQuery = `
-        SELECT p.allowed_roles, u.role, p.vehicle_type 
-        FROM parking_lots p
-        JOIN users u ON u.id = ?
-        WHERE p.id = ?
-      `;
+  SELECT p.allowed_roles, u.role, p.vehicle_type 
+  FROM parking_lots p
+  JOIN users u ON u.id = ?
+  WHERE p.id = ?
+`;
 
       db.query(checkRoleQuery, [userId, parkingLotId], (err, roleResults) => {
         if (err) {
@@ -158,27 +158,42 @@ app.post("/api/reserve", (req, res) => {
           return res.status(400).json({ message: "Parking lot not found" });
         }
 
-        const { allowed_roles, role, vehicle_type: allowedVehicleType } = roleResults[0];
+        const {
+          allowed_roles,
+          role,
+          vehicle_type: allowedVehicleType,
+        } = roleResults[0];
 
-        // ตรวจสอบว่า role ของผู้ใช้ตรงกับ allowed_roles หรือไม่
-        if (allowed_roles !== "both" && !allowed_roles.includes(role)) {
+        // Log ข้อมูลเพื่อตรวจสอบ
+        console.log("Parking Lot ID:", parkingLotId);
+        console.log("User ID:", userId);
+        console.log("Allowed Roles:", allowed_roles);
+        console.log("User Role:", role);
+        console.log("Allowed Vehicle Type:", allowedVehicleType);
+        console.log("Selected Vehicle Type:", vehicleType);
+
+        // ตรวจสอบบทบาท
+        if (allowed_roles !== "both" && allowed_roles !== role) {
           return res.status(403).json({
             message: `บทบาท (${role}) ไม่สามารถจอดที่จุดนี้ได้`,
           });
         }
 
-        // ตรวจสอบว่า vehicle_type ตรงกับที่อนุญาตใน parking_lot หรือไม่
-        if (allowedVehicleType !== "All" && allowedVehicleType !== vehicleType) {
+        // ตรวจสอบ vehicle_type
+        if (
+          allowedVehicleType !== "All" &&
+          allowedVehicleType !== vehicleType
+        ) {
           return res.status(403).json({
             message: `ประเภทยานพาหนะของคุณ (${vehicleType}) ไม่สามารถจอดที่จุดนี้ได้`,
           });
         }
 
-        // ถ้าไม่มีการจองซ้ำ และ role ตรงกับ allowed_role และ vehicle_type ตรง -> บันทึกการจอง
+        // ดำเนินการจอง
         const insertQuery = `
-          INSERT INTO reservations (user_id, parking_lot_id, slot, vehicle_type, start_time, end_time) 
-          VALUES (?, ?, ?, ?, ?, ?)
-        `;
+    INSERT INTO reservations (user_id, parking_lot_id, slot, vehicle_type, start_time, end_time) 
+    VALUES (?, ?, ?, ?, ?, ?)
+  `;
         db.query(
           insertQuery,
           [
@@ -192,7 +207,9 @@ app.post("/api/reserve", (req, res) => {
           (err, result) => {
             if (err) {
               console.error("Reservation failed:", err);
-              return res.status(500).json({ message: "จองที่จอดไม่สำเร็จ! ❌" });
+              return res
+                .status(500)
+                .json({ message: "จองที่จอดไม่สำเร็จ! ❌" });
             }
             res.status(200).json({ message: "จองที่จอดสำเร็จ! ✅" });
           }
@@ -236,8 +253,14 @@ app.get("/api/reservations", (req, res) => {
     const reservationsWithBangkokTime = results.map((reservation) => {
       return {
         ...reservation,
-        start_time: moment.utc(reservation.start_time).tz("Asia/Bangkok").format("YYYY-MM-DD HH:mm:ss"),
-        end_time: moment.utc(reservation.end_time).tz("Asia/Bangkok").format("YYYY-MM-DD HH:mm:ss"),
+        start_time: moment
+          .utc(reservation.start_time)
+          .tz("Asia/Bangkok")
+          .format("YYYY-MM-DD HH:mm:ss"),
+        end_time: moment
+          .utc(reservation.end_time)
+          .tz("Asia/Bangkok")
+          .format("YYYY-MM-DD HH:mm:ss"),
       };
     });
 
@@ -246,13 +269,12 @@ app.get("/api/reservations", (req, res) => {
   });
 });
 
-
 // API สำหรับดึงข้อมูลการจองทั้งหมด
 app.get("/api/reservations_slot", (req, res) => {
   const query = `
     SELECT 
       r.id, 
-      r.parking_lot_id, 
+      p.name AS lot_name,  -- ✅ ดึงชื่อที่จอดรถ
       r.slot, 
       u.username, 
       r.start_time, 
@@ -261,8 +283,9 @@ app.get("/api/reservations_slot", (req, res) => {
       r.status
     FROM reservations r
     LEFT JOIN users u ON r.user_id = u.id
+    LEFT JOIN parking_lots p ON r.parking_lot_id = p.id  -- ✅ เชื่อมกับตาราง parking_lots
   `;
-  
+
   db.query(query, (err, results) => {
     if (err) {
       console.error("Database error:", err);
@@ -270,10 +293,16 @@ app.get("/api/reservations_slot", (req, res) => {
     }
 
     // 🕒 แปลงเวลาจาก UTC → Bangkok Time
-    const reservationsWithBangkokTime = results.map(reservation => ({
+    const reservationsWithBangkokTime = results.map((reservation) => ({
       ...reservation,
-      start_time: moment.utc(reservation.start_time).tz("Asia/Bangkok").format("YYYY-MM-DD HH:mm:ss"),
-      end_time: moment.utc(reservation.end_time).tz("Asia/Bangkok").format("YYYY-MM-DD HH:mm:ss"),
+      start_time: moment
+        .utc(reservation.start_time)
+        .tz("Asia/Bangkok")
+        .format("YYYY-MM-DD HH:mm:ss"),
+      end_time: moment
+        .utc(reservation.end_time)
+        .tz("Asia/Bangkok")
+        .format("YYYY-MM-DD HH:mm:ss"),
     }));
 
     res.json(reservationsWithBangkokTime);
@@ -295,7 +324,6 @@ app.get("/api/user-reservations/:userId", (req, res) => {
     res.json(results);
   });
 });
-
 
 app.post("/api/check-reservations", (req, res) => {
   const now = moment().format("YYYY-MM-DD HH:mm:ss"); // เวลาปัจจุบัน
@@ -342,7 +370,7 @@ app.get("/api/admin/reservations", (req, res) => {
   JOIN parking_lots p ON r.parking_lot_id = p.id
   JOIN users u ON r.user_id = u.id
   `;
-  
+
   db.query(query, (err, results) => {
     if (err) {
       console.error("Error fetching reservations:", err);
@@ -350,16 +378,21 @@ app.get("/api/admin/reservations", (req, res) => {
     }
 
     // 🕒 แปลงจาก UTC → Bangkok Time
-    const reservationsWithBangkokTime = results.map(reservation => ({
+    const reservationsWithBangkokTime = results.map((reservation) => ({
       ...reservation,
-      start_time: moment.utc(reservation.start_time).tz("Asia/Bangkok").format("YYYY-MM-DD HH:mm:ss"),
-      end_time: moment.utc(reservation.end_time).tz("Asia/Bangkok").format("YYYY-MM-DD HH:mm:ss"),
+      start_time: moment
+        .utc(reservation.start_time)
+        .tz("Asia/Bangkok")
+        .format("YYYY-MM-DD HH:mm:ss"),
+      end_time: moment
+        .utc(reservation.end_time)
+        .tz("Asia/Bangkok")
+        .format("YYYY-MM-DD HH:mm:ss"),
     }));
 
     res.send(reservationsWithBangkokTime);
   });
 });
-
 
 app.delete("/api/admin/delete-reservation/:id", (req, res) => {
   const { id } = req.params;

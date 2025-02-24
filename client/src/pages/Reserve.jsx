@@ -122,8 +122,8 @@ const Reserve = () => {
       console.error("Reservation failed:", error);
       alert(error.response?.data?.message || "การจองผิดพลาด โปรดลองใหม่อีกครั้ง.");
     }
-  };  
-  
+  };
+
   // ตรวจสอบเวลาออกทุกๆ 1 นาที
   useEffect(() => {
     const interval = setInterval(async () => {
@@ -141,7 +141,7 @@ const Reserve = () => {
       } catch (error) {
         console.error("Failed to check reservations:", error);
       }
-    }, 10000);
+    }, 5000);
     
     return () => clearInterval(interval);
   }, [selectedLot]);  
@@ -285,7 +285,7 @@ const Reserve = () => {
                     onChange={(e) => setVehicleType(e.target.value)}
                     className="mr-3"
                   />
-                  Bike
+                  Bike 🏍️
                 </label>
                 <label className="mr-2">
                   <input
@@ -296,7 +296,7 @@ const Reserve = () => {
                     onChange={(e) => setVehicleType(e.target.value)}
                     className="mr-3"
                   />
-                  Car
+                  Car 🚗
                 </label>
                 <br />
                 <button

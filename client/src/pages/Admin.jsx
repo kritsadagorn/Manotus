@@ -17,6 +17,19 @@ const Admin = () => {
     image_url: "",
   });
 
+  useEffect(() => {
+    fetchReservations();
+    fetchParkingLots();
+  
+    // ✅ ตั้งให้โหลดข้อมูลใหม่ทุก 5 วินาที (5000ms)
+    const interval = setInterval(() => {
+      fetchReservations();
+    }, 5000);
+  
+    return () => clearInterval(interval); // ล้าง interval เมื่อ component ออกจาก DOM
+  }, []);
+
+  
   // โหลดข้อมูลการจอง
   const fetchReservations = async () => {
     try {
@@ -311,7 +324,7 @@ const Admin = () => {
               <tbody>
                 {reservations.map((res) => (
                   <tr key={res.id} className="border-b">
-                    <td className="py-2 px-4 border">{res.id}</td>
+                    <td className="py-2 px-4 border">{res.lot_name}</td>
                     <td className="py-2 px-4 border">{res.slot}</td>
                     <td className="py-2 px-4 border">{res.username}</td>
                     <td className="py-2 px-4 border">{res.start_time}</td>

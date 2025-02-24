@@ -6,31 +6,31 @@ const AboutUs = () => {
       name: "กฤษฎากรณ์ ปุนนพานิช",
       role: "Fullstack Developer",
       image:
-        "https://scontent.fcnx4-1.fna.fbcdn.net/v/t39.30808-6/365203602_6117542865039292_8290961317508704418_n.jpg?_nc_cat=111&ccb=1-7&_nc_sid=6ee11a&_nc_ohc=liMpEGtT8Y8Q7kNvgG_Mls4&_nc_oc=AdhGQ4re7IojAojJ2Y8I_0doFjQOnzj2Rm23BXhza_W6paYejb14qk9P4eL7q2atqSc&_nc_zt=23&_nc_ht=scontent.fcnx4-1.fna&_nc_gid=AcmLICjbF3O8h8d2ZtKgBlV&oh=00_AYDETJSgqbWErBYzMMPxi0yBjnnpFdG6twge4Ef4dFvTIg&oe=67B8BC79",
+        "https://img5.pic.in.th/file/secure-sv1/365203602_6117542865039292_8290961317508704418_n.jpg",
     },
     {
       name: "ธีรภัทร กันทอง",
       role: "Backend Developer",
       image:
-        "https://scontent.fcnx4-1.fna.fbcdn.net/v/t39.30808-6/453739155_122116306940377256_5009704031974300276_n.jpg?_nc_cat=111&ccb=1-7&_nc_sid=6ee11a&_nc_ohc=SoPzBVop6AcQ7kNvgGd9BQf&_nc_oc=Adjfmh_5plx3ExP2g-G_0OsGi3ukR1X06NhVin0K_5rwqETkTaGp90Wwb4rPLwZ1Fh4&_nc_zt=23&_nc_ht=scontent.fcnx4-1.fna&_nc_gid=AS-YRTn9eE8IX6O22nPdLAq&oh=00_AYCAsl-7PEKyZI19u7cIBfnKeImGjwLUYrHmJ8GrNRRNow&oe=67B89006",
+        "https://img5.pic.in.th/file/secure-sv1/453739155_122116306940377256_5009704031974300276_n.jpg",
     },
     {
       name: "รชตะ รุ่งราตรี",
       role: "Database Admin",
       image:
-        "https://scontent.fcnx4-1.fna.fbcdn.net/v/t39.30808-6/320748227_714295786624034_674374759426875360_n.jpg?_nc_cat=105&ccb=1-7&_nc_sid=6ee11a&_nc_ohc=B5PJebkOkrAQ7kNvgEkE3gb&_nc_oc=Adh8Ig5l5A4jU4QCRfUJ-SW_mh9bawHEuuUZ5JkhgByWtqUvEQCL0f5_xKs7adUzLaI&_nc_zt=23&_nc_ht=scontent.fcnx4-1.fna&_nc_gid=A4JZlKuTcdL_NBwvbZjIm2W&oh=00_AYDkiy2ZcQl-t8HZldBvkloCb7xX3R7ofqqTdO2sfyt99A&oe=67B895C5",
+        "https://img2.pic.in.th/pic/320748227_714295786624034_674374759426875360_n.jpg",
     },
     {
       name: "บุญประพัฒน์ ตานัน",
       role: "UI/UX Designer",
       image:
-        "https://scontent.fcnx4-1.fna.fbcdn.net/v/t39.30808-6/309701978_1945241255675088_6160863753271694712_n.jpg?_nc_cat=105&ccb=1-7&_nc_sid=6ee11a&_nc_ohc=uz61vUf4vksQ7kNvgFDRcTP&_nc_oc=AdjdZNGVcFemzIa6jX51QCMgOO7oGK0o8077B5FlclaBxc3yNAYyHIreM8caee4v6kE&_nc_zt=23&_nc_ht=scontent.fcnx4-1.fna&_nc_gid=AkWZVnUYTd_NoRUAsS6hz17&oh=00_AYDjj6tZpKqpteMWDh-OfT7VWW8WYmeGx5xtsNd7m6-hIQ&oe=67B8AD8A",
+        "https://img2.pic.in.th/pic/309701978_1945241255675088_6160863753271694712_n.jpg  ",
     },
     {
       name: "วุฒิภัทร ศรีคำ",
       role: "Project Manager",
       image:
-        "https://scontent.fcnx4-1.fna.fbcdn.net/v/t39.30808-1/369941466_6610273249055642_3834850599472434404_n.jpg?stp=dst-jpg_s200x200_tt6&_nc_cat=104&ccb=1-7&_nc_sid=e99d92&_nc_ohc=eNoLjb3CCK8Q7kNvgEECNBF&_nc_oc=AdgxXfrU4adEymVRIt-swmz8mC7klIBlF-G_rM_Cvq-GTDelOePmzmAwmnXtGmXMIP8&_nc_zt=24&_nc_ht=scontent.fcnx4-1.fna&_nc_gid=A8dcCFfqonOE21l4VjBEXs6&oh=00_AYBCPEF8KwRicTOTC8onXK1sgWZWWjSHI6iU4mA5enqpiw&oe=67B8B28E",
+        "https://img5.pic.in.th/file/secure-sv1/369941466_6610273249055642_3834850599472434404_n.jpg",
     },
   ];
 
