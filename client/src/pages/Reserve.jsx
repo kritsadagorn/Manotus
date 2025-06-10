@@ -3,14 +3,14 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { CheckCircle, XCircle } from "lucide-react";
-import moment from 'moment-timezone';
+import moment from "moment-timezone";
 
 const themeColors = {
-  background: "#f0f4f8", // สีพื้นหลังอ่อนๆ เพื่อให้อ่านง่าย
-  text: "#2d3748", // สีข้อความเข้มเพื่อความชัดเจน
-  available: "#48bb78", // สีเขียวสื่อถึงที่จอดว่าง
-  reserved: "#f56565", // สีแดงสื่อถึงที่จอดถูกจองแล้ว
-  border: "#e2e8f0", // สีเส้นขอบอ่อนๆ
+  background: "#f0f4f8",
+  text: "#2d3748",
+  available: "#48bb78",
+  reserved: "#f56565",
+  border: "#e2e8f0",
 };
 
 const Reserve = () => {
@@ -28,20 +28,20 @@ const Reserve = () => {
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem("user"));
     if (!user) {
-      navigate("/login"); // ถ้าไม่ได้ล็อกอิน ให้ไปที่หน้า Login
-      return; // หยุดการทำงานของ useEffect
+      navigate("/login");
+      return;
     }
   }, [navigate]);
 
   // ดึงข้อมูลที่จอดรถ
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem("user"));
-    if (!user) return; // ถ้าไม่ได้ล็อกอิน ไม่ต้องดึงข้อมูล
+    if (!user) return;
 
     const fetchParkingLots = async () => {
       try {
         const response = await axios.get(
-          "http://localhost:5000/api/parking-lots"
+          `${process.env.REACT_APP_API_URL}/api/parking-lots`
         );
         setParkingLots(response.data);
       } catch (error) {
@@ -54,12 +54,12 @@ const Reserve = () => {
   // ดึงข้อมูลการจองเมื่อเลือกโรงจอดรถ
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem("user"));
-    if (!user || !selectedLot) return; // ถ้าไม่ได้ล็อกอินหรือไม่ได้เลือกโรงจอดรถ ไม่ต้องดึงข้อมูล
+    if (!user || !selectedLot) return;
 
     const fetchReservations = async () => {
       try {
         const response = await axios.get(
-          `http://localhost:5000/api/reservations?parking_lot_id=${selectedLot.id}`
+          `${process.env.REACT_APP_API_URL}/api/reservations?parking_lot_id=${selectedLot.id}`
         );
         setReservations(response.data);
       } catch (error) {
@@ -80,61 +80,71 @@ const Reserve = () => {
       alert("โปรดเข้าสู่ระบบก่อนจอง.");
       return;
     }
-  
+
     if (!selectedSlot || !startTime || !endTime) {
       alert("โปรดเลือกตำแหน่งและเวลาเข้า-เวลาออก.");
       return;
     }
-  
+
     console.log("Start Time from Input:", startTime);
     console.log("End Time from Input:", endTime);
-  
+
     try {
       // ✅ เช็คว่าผู้ใช้มีการจองที่อื่นแล้วหรือยัง
-      const userReservations = await axios.get(`http://localhost:5000/api/user-reservations/${user.id}`);
-      
+      const userReservations = await axios.get(
+        `${process.env.REACT_APP_API_URL}/api/user-reservations/${user.id}`
+      );
+
       if (userReservations.data.length > 0) {
         alert("คุณมีการจองที่จอดอยู่แล้ว ไม่สามารถจองใหม่ได้.");
         return;
       }
-  
+
       // ✅ ดำเนินการจองถ้ายังไม่มีการจอง
-      const response = await axios.post("http://localhost:5000/api/reserve", {
-        userId: user.id,
-        parkingLotId: selectedLot.id,
-        slot: selectedSlot,
-        startTime: startTime, 
-        endTime: endTime, 
-        vehicleType,
-      });
-  
+      const response = await axios.post(
+        `${process.env.REACT_APP_API_URL}/api/reserve`,
+        {
+          userId: user.id,
+          parkingLotId: selectedLot.id,
+          slot: selectedSlot,
+          startTime: startTime,
+          endTime: endTime,
+          vehicleType,
+        }
+      );
+
       alert("จองที่จอดรถเรียบร้อย!");
       setSelectedSlot(null);
       setStartTime("");
       setEndTime("");
-  
+
       // Refresh reservations
       const res = await axios.get(
-        `http://localhost:5000/api/reservations?parking_lot_id=${selectedLot.id}`
+        `${process.env.REACT_APP_API_URL}/api/reservations?parking_lot_id=${selectedLot.id}`
       );
       setReservations(res.data);
     } catch (error) {
       console.error("Reservation failed:", error);
-      alert(error.response?.data?.message || "การจองผิดพลาด โปรดลองใหม่อีกครั้ง.");
+      alert(
+        error.response?.data?.message || "การจองผิดพลาด โปรดลองใหม่อีกครั้ง."
+      );
     }
   };
 
-  // ตรวจสอบเวลาออกทุกๆ 1 นาที
+  // ตรวจสอบเวลาออกทุกๆ 5 วินาที
   useEffect(() => {
     const interval = setInterval(async () => {
-      const now = moment.utc().format("YYYY-MM-DD HH:mm:ss"); // Use UTC time
-      console.log('Check')
+      const now = moment.utc().format("YYYY-MM-DD HH:mm:ss");
+      console.log("Check");
       try {
-        await axios.post("http://localhost:5000/api/check-reservations", { now });
-  
+        await axios.post(
+          `${process.env.REACT_APP_API_URL}/api/check-reservations`,
+          { now }
+        );
+
         if (selectedLot) {
           const res = await axios.get(
-            `http://localhost:5000/api/reservations?parking_lot_id=${selectedLot.id}`
+            `${process.env.REACT_APP_API_URL}/api/reservations?parking_lot_id=${selectedLot.id}`
           );
           setReservations(res.data);
         }
@@ -142,15 +152,15 @@ const Reserve = () => {
         console.error("Failed to check reservations:", error);
       }
     }, 5000);
-    
+
     return () => clearInterval(interval);
-  }, [selectedLot]);  
+  }, [selectedLot]);
 
   useEffect(() => {
-    fetch("http://localhost:5000/api/reservations")
+    fetch(`${process.env.REACT_APP_API_URL}/api/reservations`)
       .then((res) => res.json())
       .then((data) => {
-        console.log("Reservations Data:", data); // เช็คข้อมูลที่ได้จาก API
+        console.log("Reservations Data:", data);
         setReservations(data);
       })
       .catch((err) => console.error("Error fetching reservations:", err));
@@ -217,7 +227,7 @@ const Reserve = () => {
             <h2 className="text-xl mb-4">ตำแหน่งของ {selectedLot.name}</h2>
 
             {/* แสดงที่จอดรถ */}
-            <div className="bg-[${themeColors.background}] p-4 rounded">
+            <div className={`p-4 rounded`}>
               <div className="grid grid-cols-5 gap-4 mb-6">
                 {Array.from(
                   { length: selectedLot.max_capacity },
@@ -227,11 +237,11 @@ const Reserve = () => {
                     key={slot}
                     className={`p-4 border rounded text-center cursor-pointer flex items-center justify-center ${
                       isSlotAvailable(slot)
-                        ? "bg-[${themeColors.available}]"
-                        : "bg-[${themeColors.reserved}]"
+                        ? `bg-[${themeColors.available}]`
+                        : `bg-[${themeColors.reserved}]`
                     } ${
                       selectedSlot === slot
-                        ? "border-4 border-[${themeColors.border}]"
+                        ? `border-4 border-[${themeColors.border}]`
                         : ""
                     }`}
                     onClick={() =>
@@ -254,7 +264,7 @@ const Reserve = () => {
             </div>
 
             {/* ฟอร์มจองที่จอดรถ */}
-            <div className="bg-[${themeColors.background}] p-4 rounded">
+            <div className={`p-4 rounded`}>
               <h3 className="text-lg mb-2">กรอกข้อมูล เวลาเข้า-เวลาออก</h3>
               <div className="space-y-4">
                 <div>
@@ -263,7 +273,7 @@ const Reserve = () => {
                     type="datetime-local"
                     value={startTime}
                     onChange={(e) => setStartTime(e.target.value)}
-                    className="w-full p-2 border rounded bg-[${themeColors.background}] text-[${themeColors.text}]"
+                    className={`w-full p-2 border rounded bg-[${themeColors.background}] text-[${themeColors.text}]`}
                   />
                 </div>
                 <div>
@@ -272,7 +282,7 @@ const Reserve = () => {
                     type="datetime-local"
                     value={endTime}
                     onChange={(e) => setEndTime(e.target.value)}
-                    className="w-full p-2 border rounded bg-[${themeColors.background}] text-[${themeColors.text}]"
+                    className={`w-full p-2 border rounded bg-[${themeColors.background}] text-[${themeColors.text}]`}
                   />
                 </div>
 
@@ -311,19 +321,21 @@ const Reserve = () => {
             {/* ตารางแสดงรายการจอง */}
             <div className="mt-6">
               <h3 className="text-xl mb-4">รายการจองที่จอดรถ</h3>
-              <table className="w-full border-collapse border border-[${themeColors.border}]">
+              <table
+                className={`w-full border-collapse border border-[${themeColors.border}]`}
+              >
                 <thead>
-                  <tr className="bg-[${themeColors.background}]">
-                    <th className="border border-[${themeColors.border}] p-2">
+                  <tr className={`bg-[${themeColors.background}]`}>
+                    <th className={`border border-[${themeColors.border}] p-2`}>
                       รหัสนักศึกษา
                     </th>
-                    <th className="border border-[${themeColors.border}] p-2">
+                    <th className={`border border-[${themeColors.border}] p-2`}>
                       ตำแหน่งช่อง
                     </th>
-                    <th className="border border-[${themeColors.border}] p-2">
+                    <th className={`border border-[${themeColors.border}] p-2`}>
                       เวลาเข้า
                     </th>
-                    <th className="border border-[${themeColors.border}] p-2">
+                    <th className={`border border-[${themeColors.border}] p-2`}>
                       เวลาออก
                     </th>
                   </tr>
@@ -332,19 +344,27 @@ const Reserve = () => {
                   {reservations.map((reservation) => (
                     <tr
                       key={reservation.id}
-                      className="bg-[${themeColors.background}]"
+                      className={`bg-[${themeColors.background}]`}
                     >
-                      <td className="border border-[${themeColors.border}] p-2">
+                      <td
+                        className={`border border-[${themeColors.border}] p-2`}
+                      >
                         {reservation.username || "Unknown"}
                       </td>
-                      <td className="border border-[${themeColors.border}] p-2">
+                      <td
+                        className={`border border-[${themeColors.border}] p-2`}
+                      >
                         {reservation.slot || "N/A"}
                       </td>
-                      <td className="border border-[${themeColors.border}] p-2">
-                      {reservation.start_time}
+                      <td
+                        className={`border border-[${themeColors.border}] p-2`}
+                      >
+                        {reservation.start_time}
                       </td>
-                      <td className="border border-[${themeColors.border}] p-2">
-                      {reservation.end_time}
+                      <td
+                        className={`border border-[${themeColors.border}] p-2`}
+                      >
+                        {reservation.end_time}
                       </td>
                     </tr>
                   ))}

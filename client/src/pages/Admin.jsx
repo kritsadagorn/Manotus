@@ -20,20 +20,21 @@ const Admin = () => {
   useEffect(() => {
     fetchReservations();
     fetchParkingLots();
-  
+
     // ✅ ตั้งให้โหลดข้อมูลใหม่ทุก 5 วินาที (5000ms)
     const interval = setInterval(() => {
       fetchReservations();
     }, 5000);
-  
+
     return () => clearInterval(interval); // ล้าง interval เมื่อ component ออกจาก DOM
   }, []);
 
-  
   // โหลดข้อมูลการจอง
   const fetchReservations = async () => {
     try {
-      const res = await fetch("http://localhost:5000/api/reservations_slot");
+      const res = await fetch(
+        `${process.env.REACT_APP_API_URL}/api/reservations_slot`
+      );
       const data = await res.json();
       setReservations(data);
     } catch (error) {
@@ -48,7 +49,9 @@ const Admin = () => {
   // โหลดข้อมูล parking_lots
   const fetchParkingLots = async () => {
     try {
-      const res = await fetch("http://localhost:5000/api/parking-lots");
+      const res = await fetch(
+        `${process.env.REACT_APP_API_URL}/api/parking-lots`
+      );
       const data = await res.json();
       setParkingLots(data);
     } catch (error) {
@@ -60,16 +63,19 @@ const Admin = () => {
     fetchReservations();
     fetchParkingLots();
   }, []);
-  
+
   // ฟังก์ชันเพิ่ม User
   const handleAddUser = async (e) => {
     e.preventDefault();
     try {
-      const res = await fetch("http://localhost:5000/api/admin/add-user", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newUser),
-      });
+      const res = await fetch(
+        `${process.env.REACT_APP_API_URL}/api/admin/add-user`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(newUser),
+        }
+      );
       const data = await res.json();
       alert(data.message);
       setNewUser({ username: "", password: "", role: "student" });
@@ -82,7 +88,7 @@ const Admin = () => {
   const handleDeleteReservation = async (id) => {
     try {
       const res = await fetch(
-        `http://localhost:5000/api/admin/delete-reservation/${id}`,
+        `${process.env.REACT_APP_API_URL}/api/admin/delete-reservation/${id}`,
         {
           method: "DELETE",
         }
@@ -100,7 +106,7 @@ const Admin = () => {
     e.preventDefault();
     try {
       const res = await fetch(
-        "http://localhost:5000/api/admin/add-parking-lot",
+        `${process.env.REACT_APP_API_URL}/api/admin/add-parking-lot`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -126,7 +132,7 @@ const Admin = () => {
   const handleDeleteParkingLot = async (id) => {
     try {
       const res = await fetch(
-        `http://localhost:5000/api/admin/delete-parking-lot/${id}`,
+        `${process.env.REACT_APP_API_URL}/api/admin/delete-parking-lot/${id}`,
         {
           method: "DELETE",
         }
@@ -141,12 +147,15 @@ const Admin = () => {
 
   return (
     <>
-    <style>
+      <style>
         {`
           @import url('https://fonts.googleapis.com/css2?family=Kanit:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
         `}
       </style>
-      <div className="container mx-auto p-6" style={{ fontFamily: 'Kanit, sans-serif' }}>
+      <div
+        className="container mx-auto p-6"
+        style={{ fontFamily: "Kanit, sans-serif" }}
+      >
         <h1 className="text-3xl font-bold mb-4">Admin Panel</h1>
 
         {/* ฟอร์มเพิ่ม User */}
@@ -317,7 +326,6 @@ const Admin = () => {
                   <th className="py-2 px-4 border">Start Time</th>
                   <th className="py-2 px-4 border">End Time</th>
                   <th className="py-2 px-4 border">Vehicle Type</th>
-                  {/* <th className="py-2 px-4 border">Status</th> */}
                   <th className="py-2 px-4 border">Actions</th>
                 </tr>
               </thead>
@@ -330,15 +338,6 @@ const Admin = () => {
                     <td className="py-2 px-4 border">{res.start_time}</td>
                     <td className="py-2 px-4 border">{res.end_time}</td>
                     <td className="py-2 px-4 border">{res.vehicle_type}</td>
-                    {/* <td
-                      className={`py-2 px-4 border ${
-                        res.status === "Expired"
-                          ? "text-red-500"
-                          : "text-green-500"
-                      }`}
-                    >
-                      {res.status}
-                    </td> */}
                     <td className="py-2 px-4 border">
                       <button
                         onClick={() => handleDeleteReservation(res.id)}

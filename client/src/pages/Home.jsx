@@ -25,8 +25,8 @@ const Home = () => {
     const fetchData = async () => {
       try {
         const [parkingResponse, reservationsResponse] = await Promise.all([
-          axios.get("http://localhost:5000/api/parking-lots"),
-          axios.get("http://localhost:5000/api/reservations_slot"),
+          axios.get(`${process.env.REACT_APP_API_URL}/api/parking-lots`),
+          axios.get(`${process.env.REACT_APP_API_URL}/api/reservations_slot`),
         ]);
         setParkingLots(parkingResponse.data);
         setReservations(reservationsResponse.data);
@@ -65,7 +65,11 @@ const Home = () => {
         className="flex items-center justify-center min-h-screen"
         style={{ backgroundColor: themeColors.background }}
       >
-        <Loader2 className="animate-spin" size={40} color={themeColors.loading} />
+        <Loader2
+          className="animate-spin"
+          size={40}
+          color={themeColors.loading}
+        />
       </div>
     );
   }
@@ -74,7 +78,10 @@ const Home = () => {
     return (
       <div
         className="flex items-center justify-center min-h-screen"
-        style={{ backgroundColor: themeColors.background, color: themeColors.text }}
+        style={{
+          backgroundColor: themeColors.background,
+          color: themeColors.text,
+        }}
       >
         <p>เกิดข้อผิดพลาด: {error}</p>
       </div>
@@ -93,7 +100,7 @@ const Home = () => {
         style={{
           backgroundColor: themeColors.background,
           color: themeColors.text,
-          fontFamily: 'Kanit, sans-serif'
+          fontFamily: "Kanit, sans-serif",
         }}
       >
         <motion.h1
