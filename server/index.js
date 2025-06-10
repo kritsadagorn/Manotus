@@ -8,18 +8,23 @@ const moment = require("moment-timezone");
 const app = express();
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || "http://localhost:3000",
+    origin: [
+      process.env.FRONTEND_URL || "http://localhost:3000",
+      "https://resparkinglots.vercel.app",
+    ],
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    credentials: true,
   })
 );
 app.use(bodyParser.json());
 
 // เชื่อมต่อ MySQL
 const db = mysql.createConnection({
-  host: process.env.DB_HOST || "localhost",
-  user: process.env.DB_USER || "root",
-  password: process.env.DB_PASSWORD || "",
-  database: process.env.DB_NAME || "parking_db",
-  port: process.env.DB_PORT || 3306,
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME,
+  port: process.env.DB_PORT,
 });
 
 db.connect((err) => {
@@ -31,7 +36,7 @@ db.connect((err) => {
 });
 
 // API สำหรับล็อกอิน
-app.post("/api/login", async (req, res) => {
+app.post("/api/login", (req, res) => {
   const { username, password } = req.body;
 
   // ✅ ถ้า username และ password เป็น admin ให้ข้ามการเช็คฐานข้อมูล
@@ -50,19 +55,16 @@ app.post("/api/login", async (req, res) => {
     }
 
     if (results.length === 0) {
-      return res.json({ success: false, message: "Invalid credentials" });
+      return res
+        .status(401)
+        .json({ success: false, message: "Invalid credentials" });
     }
 
     const user = results[0];
-
-    if (user.role === "teacher") {
-      return res.json({
-        success: true,
-        user: { username: user.username, role: "teacher" },
-      });
-    }
-
-    res.json({ success: true, user });
+    return res.json({
+      success: true,
+      user: { username: user.username, role: user.role },
+    });
   });
 });
 
@@ -275,7 +277,6 @@ app.get("/api/reservations", (req, res) => {
   });
 });
 
-// API สำหรับดึงข้อมูลการจองทั้งหมด
 app.get("/api/reservations_slot", (req, res) => {
   const query = `
     SELECT 
@@ -348,7 +349,6 @@ app.post("/api/check-reservations", (req, res) => {
   );
 });
 
-// เพิ่ม User ใหม่
 app.post("/api/admin/add-user", (req, res) => {
   const { username, password, role } = req.body;
   const query = "INSERT INTO users (username, password, role) VALUES (?, ?, ?)";
@@ -361,7 +361,6 @@ app.post("/api/admin/add-user", (req, res) => {
   });
 });
 
-// ดึงข้อมูลการจองทั้งหมด
 app.get("/api/admin/reservations", (req, res) => {
   const query = `
     SELECT 
@@ -422,7 +421,6 @@ app.delete("/api/admin/delete-reservation/:id", (req, res) => {
   });
 });
 
-// API สำหรับเพิ่ม parking_lots
 app.post("/api/admin/add-parking-lot", (req, res) => {
   const { name, max_capacity, allowed_roles, vehicle_type, image_url } =
     req.body;
@@ -443,7 +441,6 @@ app.post("/api/admin/add-parking-lot", (req, res) => {
   );
 });
 
-// API สำหรับแก้ไข parking_lots
 app.put("/api/admin/update-parking-lot/:id", (req, res) => {
   const { id } = req.params;
   const { name, max_capacity, allowed_roles, vehicle_type, image_url } =
@@ -466,7 +463,6 @@ app.put("/api/admin/update-parking-lot/:id", (req, res) => {
   );
 });
 
-// API สำหรับลบ parking_lots
 app.delete("/api/admin/delete-parking-lot/:id", (req, res) => {
   const { id } = req.params;
   const query = "DELETE FROM parking_lots WHERE id = ?";
