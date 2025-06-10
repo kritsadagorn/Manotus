@@ -25,8 +25,12 @@ const Home = () => {
     const fetchData = async () => {
       try {
         const [parkingResponse, reservationsResponse] = await Promise.all([
-          axios.get(`${process.env.REACT_APP_API_URL}/api/parking-lots`),
-          axios.get(`${process.env.REACT_APP_API_URL}/api/reservations_slot`),
+          axios.get(
+            `https://manotus-production.up.railway.app/api/parking-lots`
+          ),
+          axios.get(
+            `https://manotus-production.up.railway.app/api/reservations_slot`
+          ),
         ]);
         setParkingLots(parkingResponse.data);
         setReservations(reservationsResponse.data);

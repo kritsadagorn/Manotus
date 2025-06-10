@@ -12,7 +12,7 @@ const Login = () => {
 
     try {
       const response = await fetch(
-        `${process.env.REACT_APP_API_URL}/api/login`,
+        `https://manotus-production.up.railway.app/api/login`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -49,7 +49,7 @@ const Login = () => {
   };
 
   useEffect(() => {
-    console.log("API:", process.env.REACT_APP_API_URL); // 👈
+    console.log("API:", "https://manotus-production.up.railway.app"); // 👈
   }, []);
 
   return (

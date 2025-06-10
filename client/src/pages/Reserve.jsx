@@ -41,7 +41,7 @@ const Reserve = () => {
     const fetchParkingLots = async () => {
       try {
         const response = await axios.get(
-          `${process.env.REACT_APP_API_URL}/api/parking-lots`
+          `https://manotus-production.up.railway.app/api/parking-lots`
         );
         setParkingLots(response.data);
       } catch (error) {
@@ -59,7 +59,7 @@ const Reserve = () => {
     const fetchReservations = async () => {
       try {
         const response = await axios.get(
-          `${process.env.REACT_APP_API_URL}/api/reservations?parking_lot_id=${selectedLot.id}`
+          `https://manotus-production.up.railway.app/api/reservations?parking_lot_id=${selectedLot.id}`
         );
         setReservations(response.data);
       } catch (error) {
@@ -92,7 +92,7 @@ const Reserve = () => {
     try {
       // ✅ เช็คว่าผู้ใช้มีการจองที่อื่นแล้วหรือยัง
       const userReservations = await axios.get(
-        `${process.env.REACT_APP_API_URL}/api/user-reservations/${user.id}`
+        `https://manotus-production.up.railway.app/api/user-reservations/${user.id}`
       );
 
       if (userReservations.data.length > 0) {
@@ -102,7 +102,7 @@ const Reserve = () => {
 
       // ✅ ดำเนินการจองถ้ายังไม่มีการจอง
       const response = await axios.post(
-        `${process.env.REACT_APP_API_URL}/api/reserve`,
+        `https://manotus-production.up.railway.app/api/reserve`,
         {
           userId: user.id,
           parkingLotId: selectedLot.id,
@@ -120,7 +120,7 @@ const Reserve = () => {
 
       // Refresh reservations
       const res = await axios.get(
-        `${process.env.REACT_APP_API_URL}/api/reservations?parking_lot_id=${selectedLot.id}`
+        `https://manotus-production.up.railway.app/api/reservations?parking_lot_id=${selectedLot.id}`
       );
       setReservations(res.data);
     } catch (error) {
@@ -138,13 +138,13 @@ const Reserve = () => {
       console.log("Check");
       try {
         await axios.post(
-          `${process.env.REACT_APP_API_URL}/api/check-reservations`,
+          `https://manotus-production.up.railway.app/api/check-reservations`,
           { now }
         );
 
         if (selectedLot) {
           const res = await axios.get(
-            `${process.env.REACT_APP_API_URL}/api/reservations?parking_lot_id=${selectedLot.id}`
+            `https://manotus-production.up.railway.app/api/reservations?parking_lot_id=${selectedLot.id}`
           );
           setReservations(res.data);
         }
@@ -157,7 +157,7 @@ const Reserve = () => {
   }, [selectedLot]);
 
   useEffect(() => {
-    fetch(`${process.env.REACT_APP_API_URL}/api/reservations`)
+    fetch(`https://manotus-production.up.railway.app/api/reservations`)
       .then((res) => res.json())
       .then((data) => {
         console.log("Reservations Data:", data);

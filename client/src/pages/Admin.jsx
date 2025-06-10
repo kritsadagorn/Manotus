@@ -33,7 +33,7 @@ const Admin = () => {
   const fetchReservations = async () => {
     try {
       const res = await fetch(
-        `${process.env.REACT_APP_API_URL}/api/reservations_slot`
+        `https://manotus-production.up.railway.app/api/reservations_slot`
       );
       const data = await res.json();
       setReservations(data);
@@ -50,7 +50,7 @@ const Admin = () => {
   const fetchParkingLots = async () => {
     try {
       const res = await fetch(
-        `${process.env.REACT_APP_API_URL}/api/parking-lots`
+        `https://manotus-production.up.railway.app/api/parking-lots`
       );
       const data = await res.json();
       setParkingLots(data);
@@ -69,7 +69,7 @@ const Admin = () => {
     e.preventDefault();
     try {
       const res = await fetch(
-        `${process.env.REACT_APP_API_URL}/api/admin/add-user`,
+        `https://manotus-production.up.railway.app/api/admin/add-user`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -88,7 +88,7 @@ const Admin = () => {
   const handleDeleteReservation = async (id) => {
     try {
       const res = await fetch(
-        `${process.env.REACT_APP_API_URL}/api/admin/delete-reservation/${id}`,
+        `https://manotus-production.up.railway.app/api/admin/delete-reservation/${id}`,
         {
           method: "DELETE",
         }
@@ -106,7 +106,7 @@ const Admin = () => {
     e.preventDefault();
     try {
       const res = await fetch(
-        `${process.env.REACT_APP_API_URL}/api/admin/add-parking-lot`,
+        `https://manotus-production.up.railway.app/api/admin/add-parking-lot`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -132,7 +132,7 @@ const Admin = () => {
   const handleDeleteParkingLot = async (id) => {
     try {
       const res = await fetch(
-        `${process.env.REACT_APP_API_URL}/api/admin/delete-parking-lot/${id}`,
+        `https://manotus-production.up.railway.app/api/admin/delete-parking-lot/${id}`,
         {
           method: "DELETE",
         }
