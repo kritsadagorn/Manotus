@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 const Login = () => {
@@ -10,11 +11,14 @@ const Login = () => {
     e.preventDefault();
 
     try {
-      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password }),
-      });
+      const response = await fetch(
+        `${process.env.REACT_APP_API_URL}/api/login`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username, password }),
+        }
+      );
 
       const data = await response.json();
       console.log("Server response:", data); // ✅ Debug log
@@ -44,14 +48,21 @@ const Login = () => {
     }
   };
 
+  useEffect(() => {
+    console.log("API:", process.env.REACT_APP_API_URL); // 👈
+  }, []);
+
   return (
     <>
-    <style>
+      <style>
         {`
           @import url('https://fonts.googleapis.com/css2?family=Kanit:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
         `}
       </style>
-      <div className="max-w-md mx-auto mt-10 p-6 bg-gray-100 rounded-lg shadow-md" style={{ fontFamily: 'Kanit, sans-serif' }}>
+      <div
+        className="max-w-md mx-auto mt-10 p-6 bg-gray-100 rounded-lg shadow-md"
+        style={{ fontFamily: "Kanit, sans-serif" }}
+      >
         <h2 className="text-2xl font-bold text-center">Login</h2>
         <form onSubmit={handleLogin} className="mt-4">
           <input
