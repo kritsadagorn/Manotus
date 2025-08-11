@@ -17,6 +17,9 @@ const Admin = () => {
     image_url: "",
   });
 
+  // ✅ Use environment variable
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
   useEffect(() => {
     fetchReservations();
     fetchParkingLots();
@@ -32,9 +35,7 @@ const Admin = () => {
   // โหลดข้อมูลการจอง
   const fetchReservations = async () => {
     try {
-      const res = await fetch(
-        `https://manotus-production.up.railway.app/api/reservations_slot`
-      );
+      const res = await fetch(`${API_URL}/api/reservations_slot`); // ✅ Updated
       const data = await res.json();
       setReservations(data);
     } catch (error) {
@@ -42,16 +43,10 @@ const Admin = () => {
     }
   };
 
-  useEffect(() => {
-    fetchReservations();
-  }, []);
-
   // โหลดข้อมูล parking_lots
   const fetchParkingLots = async () => {
     try {
-      const res = await fetch(
-        `https://manotus-production.up.railway.app/api/parking-lots`
-      );
+      const res = await fetch(`${API_URL}/api/parking-lots`); // ✅ Updated
       const data = await res.json();
       setParkingLots(data);
     } catch (error) {
@@ -59,23 +54,15 @@ const Admin = () => {
     }
   };
 
-  useEffect(() => {
-    fetchReservations();
-    fetchParkingLots();
-  }, []);
-
   // ฟังก์ชันเพิ่ม User
   const handleAddUser = async (e) => {
     e.preventDefault();
     try {
-      const res = await fetch(
-        `https://manotus-production.up.railway.app/api/admin/add-user`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(newUser),
-        }
-      );
+      const res = await fetch(`${API_URL}/api/admin/add-user`, { // ✅ Updated
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newUser),
+      });
       const data = await res.json();
       alert(data.message);
       setNewUser({ username: "", password: "", role: "student" });
@@ -88,7 +75,7 @@ const Admin = () => {
   const handleDeleteReservation = async (id) => {
     try {
       const res = await fetch(
-        `https://manotus-production.up.railway.app/api/admin/delete-reservation/${id}`,
+        `${API_URL}/api/admin/delete-reservation/${id}`, // ✅ Updated
         {
           method: "DELETE",
         }
@@ -105,14 +92,11 @@ const Admin = () => {
   const handleAddParkingLot = async (e) => {
     e.preventDefault();
     try {
-      const res = await fetch(
-        `https://manotus-production.up.railway.app/api/admin/add-parking-lot`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(newParkingLot),
-        }
-      );
+      const res = await fetch(`${API_URL}/api/admin/add-parking-lot`, { // ✅ Updated
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newParkingLot),
+      });
       const data = await res.json();
       alert(data.message);
       setNewParkingLot({
@@ -132,7 +116,7 @@ const Admin = () => {
   const handleDeleteParkingLot = async (id) => {
     try {
       const res = await fetch(
-        `https://manotus-production.up.railway.app/api/admin/delete-parking-lot/${id}`,
+        `${API_URL}/api/admin/delete-parking-lot/${id}`, // ✅ Updated
         {
           method: "DELETE",
         }

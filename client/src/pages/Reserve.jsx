@@ -24,6 +24,9 @@ const Reserve = () => {
 
   const navigate = useNavigate();
 
+  // ✅ Use environment variable
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
   // ตรวจสอบสถานะ Login
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem("user"));
@@ -40,9 +43,7 @@ const Reserve = () => {
 
     const fetchParkingLots = async () => {
       try {
-        const response = await axios.get(
-          `https://manotus-production.up.railway.app/api/parking-lots`
-        );
+        const response = await axios.get(`${API_URL}/api/parking-lots`); // ✅ Updated
         setParkingLots(response.data);
       } catch (error) {
         console.error("Failed to fetch parking lots:", error);
@@ -59,7 +60,7 @@ const Reserve = () => {
     const fetchReservations = async () => {
       try {
         const response = await axios.get(
-          `https://manotus-production.up.railway.app/api/reservations?parking_lot_id=${selectedLot.id}`
+          `${API_URL}/api/reservations?parking_lot_id=${selectedLot.id}` // ✅ Updated
         );
         setReservations(response.data);
       } catch (error) {
@@ -92,7 +93,7 @@ const Reserve = () => {
     try {
       // ✅ เช็คว่าผู้ใช้มีการจองที่อื่นแล้วหรือยัง
       const userReservations = await axios.get(
-        `https://manotus-production.up.railway.app/api/user-reservations/${user.id}`
+        `${API_URL}/api/user-reservations/${user.id}` // ✅ Updated
       );
 
       if (userReservations.data.length > 0) {
@@ -102,7 +103,7 @@ const Reserve = () => {
 
       // ✅ ดำเนินการจองถ้ายังไม่มีการจอง
       const response = await axios.post(
-        `https://manotus-production.up.railway.app/api/reserve`,
+        `${API_URL}/api/reserve`, // ✅ Updated
         {
           userId: user.id,
           parkingLotId: selectedLot.id,
@@ -120,7 +121,7 @@ const Reserve = () => {
 
       // Refresh reservations
       const res = await axios.get(
-        `https://manotus-production.up.railway.app/api/reservations?parking_lot_id=${selectedLot.id}`
+        `${API_URL}/api/reservations?parking_lot_id=${selectedLot.id}` // ✅ Updated
       );
       setReservations(res.data);
     } catch (error) {
@@ -138,13 +139,13 @@ const Reserve = () => {
       console.log("Check");
       try {
         await axios.post(
-          `https://manotus-production.up.railway.app/api/check-reservations`,
+          `${API_URL}/api/check-reservations`, // ✅ Updated
           { now }
         );
 
         if (selectedLot) {
           const res = await axios.get(
-            `https://manotus-production.up.railway.app/api/reservations?parking_lot_id=${selectedLot.id}`
+            `${API_URL}/api/reservations?parking_lot_id=${selectedLot.id}` // ✅ Updated
           );
           setReservations(res.data);
         }
@@ -157,7 +158,7 @@ const Reserve = () => {
   }, [selectedLot]);
 
   useEffect(() => {
-    fetch(`https://manotus-production.up.railway.app/api/reservations`)
+    fetch(`${API_URL}/api/reservations`) // ✅ Updated
       .then((res) => res.json())
       .then((data) => {
         console.log("Reservations Data:", data);

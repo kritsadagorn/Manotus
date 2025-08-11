@@ -7,12 +7,15 @@ const Login = () => {
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
 
+  // ✅ Use environment variable
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
   const handleLogin = async (e) => {
     e.preventDefault();
 
     try {
       const response = await fetch(
-        `https://manotus-production.up.railway.app/api/login`,
+        `${API_URL}/api/login`, // ✅ Use environment variable
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -21,15 +24,13 @@ const Login = () => {
       );
 
       const data = await response.json();
-      console.log("Server response:", data); // ✅ Debug log
+      console.log("Server response:", data);
 
       if (data.success) {
         alert("Login Successful");
 
-        // ✅ บันทึกข้อมูล user ลง localStorage
         localStorage.setItem("user", JSON.stringify(data.user));
 
-        // ตรวจสอบ username และ password ว่าเป็น admin หรือไม่
         if (username.trim() === "admin" && password.trim() === "admin") {
           navigate("/admin");
         } else {
@@ -37,19 +38,19 @@ const Login = () => {
         }
       } else {
         alert("Login Failed: Invalid credentials");
-        setUsername(""); // ✅ รีเซ็ตค่า input
+        setUsername("");
         setPassword("");
       }
     } catch (error) {
       console.error("Login error:", error);
       alert("Login Failed");
-      setUsername(""); // ✅ รีเซ็ตค่า input
+      setUsername("");
       setPassword("");
     }
   };
 
   useEffect(() => {
-    console.log("API:", "https://manotus-production.up.railway.app"); // 👈
+    console.log("API URL:", API_URL); // ✅ Debug log
   }, []);
 
   return (

@@ -21,16 +21,15 @@ const Home = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedImage, setSelectedImage] = useState("");
 
+  // ✅ Use environment variable
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
   useEffect(() => {
     const fetchData = async () => {
       try {
         const [parkingResponse, reservationsResponse] = await Promise.all([
-          axios.get(
-            `https://manotus-production.up.railway.app/api/parking-lots`
-          ),
-          axios.get(
-            `https://manotus-production.up.railway.app/api/reservations_slot`
-          ),
+          axios.get(`${API_URL}/api/parking-lots`), // ✅ Updated
+          axios.get(`${API_URL}/api/reservations_slot`), // ✅ Updated
         ]);
         setParkingLots(parkingResponse.data);
         setReservations(reservationsResponse.data);
