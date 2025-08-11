@@ -10,7 +10,7 @@ app.use(
   cors({
     origin: [
       process.env.FRONTEND_URL || "http://localhost:3000",
-      "https://resparkinglots.vercel.app",
+      "https://your-vercel-app.vercel.app", // Add your actual Vercel URL
     ],
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     credentials: true,
