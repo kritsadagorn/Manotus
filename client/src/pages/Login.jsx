@@ -29,28 +29,26 @@ const Login = () => {
       if (data.success) {
         alert("Login Successful");
 
-        // ✅ แก้ไขให้เก็บข้อมูล user ที่ถูกต้อง
+        // เก็บข้อมูลผู้ใช้ทั้งหมดรวมถึง id
         localStorage.setItem("user", JSON.stringify({
-          id: data.user.id,           // ✅ เก็บ id จาก response
+          id: data.user.id,
           username: data.user.username,
           role: data.user.role
         }));
 
-        if (username.trim() === "admin" && password.trim() === "admin") {
+        if (data.user.role === "teacher" && username === "admin") {
           navigate("/admin");
         } else {
           navigate("/reserve");
         }
       } else {
-        alert("Login Failed: Invalid credentials");
+        alert("Login Failed: " + (data.message || "Invalid credentials"));
         setUsername("");
         setPassword("");
       }
     } catch (error) {
       console.error("Login error:", error);
-      alert("Login Failed");
-      setUsername("");
-      setPassword("");
+      alert("Login Failed: Server error");
     }
   };
 

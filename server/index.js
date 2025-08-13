@@ -43,7 +43,7 @@ app.post("/api/login", (req, res) => {
   if (username === "admin" && password === "admin") {
     return res.json({
       success: true,
-      user: { username: "admin", role: "teacher" },
+      user: { id: 0, username: "admin", role: "teacher" }, // เพิ่ม id
     });
   }
 
@@ -63,7 +63,11 @@ app.post("/api/login", (req, res) => {
     const user = results[0];
     return res.json({
       success: true,
-      user: { username: user.username, role: user.role },
+      user: {
+        id: user.id, // ส่ง id กลับไป
+        username: user.username,
+        role: user.role,
+      },
     });
   });
 });

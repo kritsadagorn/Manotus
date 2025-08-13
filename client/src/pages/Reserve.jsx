@@ -38,15 +38,18 @@ const Reserve = () => {
 
   // ดึงข้อมูลที่จอดรถ
   useEffect(() => {
-    const user = JSON.parse(localStorage.getItem("user"));
-    if (!user) return;
-
     const fetchParkingLots = async () => {
       try {
-        const response = await axios.get(`${API_URL}/api/parking-lots`); // ✅ Updated
-        setParkingLots(response.data);
+        const response = await axios.get(`${API_URL}/api/parking-lots`);
+        if (response.data && response.data.length > 0) {
+          setParkingLots(response.data);
+        } else {
+          console.log("No parking lots found");
+          setParkingLots([]);
+        }
       } catch (error) {
         console.error("Failed to fetch parking lots:", error);
+        setParkingLots([]);
       }
     };
     fetchParkingLots();
@@ -77,57 +80,57 @@ const Reserve = () => {
 
   const handleReserve = async () => {
     const user = JSON.parse(localStorage.getItem("user"));
-    if (!user) {
-      alert("โปรดเข้าสู่ระบบก่อนจอง.");
+    if (!user || !user.id) {
+      alert("กรุณาเข้าสู่ระบบก่อนจอง");
+      navigate("/login");
       return;
     }
 
     if (!selectedSlot || !startTime || !endTime) {
-      alert("โปรดเลือกตำแหน่งและเวลาเข้า-เวลาออก.");
+      alert("โปรดเลือกตำแหน่งและเวลาเข้า-เวลาออก");
       return;
     }
 
-    console.log("Start Time from Input:", startTime);
-    console.log("End Time from Input:", endTime);
-
     try {
-      // ✅ เช็คว่าผู้ใช้มีการจองที่อื่นแล้วหรือยัง
+      // ตรวจสอบการจองที่มีอยู่
       const userReservations = await axios.get(
-        `${API_URL}/api/user-reservations/${user.id}` // ✅ Updated
+        `${API_URL}/api/user-reservations/${user.id}`
       );
 
       if (userReservations.data.length > 0) {
-        alert("คุณมีการจองที่จอดอยู่แล้ว ไม่สามารถจองใหม่ได้.");
+        alert("คุณมีการจองที่จอดอยู่แล้ว ไม่สามารถจองเพิ่มได้");
         return;
       }
 
-      // ✅ ดำเนินการจองถ้ายังไม่มีการจอง
+      // ทำการจอง
       const response = await axios.post(
-        `${API_URL}/api/reserve`, // ✅ Updated
+        `${API_URL}/api/reserve`,
         {
           userId: user.id,
           parkingLotId: selectedLot.id,
           slot: selectedSlot,
           startTime: startTime,
           endTime: endTime,
-          vehicleType,
+          vehicleType: vehicleType,
         }
       );
 
-      alert("จองที่จอดรถเรียบร้อย!");
+      alert(response.data.message || "จองที่จอดรถเรียบร้อย!");
       setSelectedSlot(null);
       setStartTime("");
       setEndTime("");
 
-      // Refresh reservations
-      const res = await axios.get(
-        `${API_URL}/api/reservations?parking_lot_id=${selectedLot.id}` // ✅ Updated
-      );
-      setReservations(res.data);
+      // รีเฟรชข้อมูลการจอง
+      if (selectedLot) {
+        const res = await axios.get(
+          `${API_URL}/api/reservations?parking_lot_id=${selectedLot.id}`
+        );
+        setReservations(res.data);
+      }
     } catch (error) {
       console.error("Reservation failed:", error);
       alert(
-        error.response?.data?.message || "การจองผิดพลาด โปรดลองใหม่อีกครั้ง."
+        error.response?.data?.message || "การจองผิดพลาด โปรดลองใหม่อีกครั้ง"
       );
     }
   };
