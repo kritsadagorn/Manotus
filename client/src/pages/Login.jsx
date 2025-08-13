@@ -15,7 +15,7 @@ const Login = () => {
 
     try {
       const response = await fetch(
-        `${API_URL}/api/login`, // ✅ Use environment variable
+        `${API_URL}/api/login`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -29,7 +29,12 @@ const Login = () => {
       if (data.success) {
         alert("Login Successful");
 
-        localStorage.setItem("user", JSON.stringify(data.user));
+        // ✅ แก้ไขให้เก็บข้อมูล user ที่ถูกต้อง
+        localStorage.setItem("user", JSON.stringify({
+          id: data.user.id,           // ✅ เก็บ id จาก response
+          username: data.user.username,
+          role: data.user.role
+        }));
 
         if (username.trim() === "admin" && password.trim() === "admin") {
           navigate("/admin");
