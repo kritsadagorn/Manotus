@@ -39,6 +39,21 @@ db.connect((err) => {
 app.post("/api/login", (req, res) => {
   const { username, password } = req.body;
 
+  // Input validation
+  if (!username || !password) {
+    return res.status(400).json({ 
+      success: false, 
+      message: "กรุณากรอก username และ password" 
+    });
+  }
+
+  if (typeof username !== 'string' || typeof password !== 'string') {
+    return res.status(400).json({ 
+      success: false, 
+      message: "ข้อมูลไม่ถูกต้อง" 
+    });
+  }
+
   // ✅ ถ้า username และ password เป็น admin ให้ข้ามการเช็คฐานข้อมูล
   if (username === "admin" && password === "admin") {
     return res.json({
@@ -51,56 +66,78 @@ app.post("/api/login", (req, res) => {
   db.query(query, [username, password], (err, results) => {
     if (err) {
       console.error("Database error:", err);
-      return res.status(500).json({ success: false, message: "Server error" });
+      return res.status(500).json({ 
+        success: false, 
+        message: "เกิดข้อผิดพลาดของเซิร์ฟเวอร์" 
+      });
     }
 
     if (results.length === 0) {
-      return res
-        .status(401)
-        .json({ success: false, message: "Invalid credentials" });
+      return res.status(401).json({ 
+        success: false, 
+        message: "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง" 
+      });
     }
 
     const user = results[0];
     return res.json({
       success: true,
-      user: { username: user.username, role: user.role },
+      user: { id: user.id, username: user.username, role: user.role },
     });
   });
 });
 
 app.get("/api/user/:id", (req, res) => {
   const { id } = req.params;
+  
+  // Input validation
+  if (!id || isNaN(id)) {
+    return res.status(400).json({ message: "ID ผู้ใช้ไม่ถูกต้อง" });
+  }
+
   const query = "SELECT id, username, email FROM users WHERE id = ?";
 
   db.query(query, [id], (err, results) => {
     if (err) {
       console.error("Error fetching user:", err);
-      return res.status(500).json({ message: "Server error" });
+      return res.status(500).json({ message: "เกิดข้อผิดพลาดของเซิร์ฟเวอร์" });
     }
     if (results.length === 0) {
-      return res.status(404).json({ message: "User not found" });
+      return res.status(404).json({ message: "ไม่พบผู้ใช้" });
     }
     res.json(results[0]);
   });
 });
 
-// API สำหรับดึงข้อมูลที่จอดรถ
-app.get("/api/parking-lots", (req, res) => {
-  const query = "SELECT * FROM parking_lots";
-  db.query(query, (err, results) => {
-    if (err) {
-      console.error("Error fetching parking lots:", err);
-      return res.status(500).json({ message: "Server error" });
-    }
-    console.log("Parking lots fetched:", results);
-    res.json(results);
-  });
-});
-
 // API สำหรับจองที่จอดรถ
 app.post("/api/reserve", (req, res) => {
-  const { userId, parkingLotId, slot, vehicleType, startTime, endTime } =
-    req.body;
+  const { userId, parkingLotId, slot, vehicleType, startTime, endTime } = req.body;
+
+  // Input validation
+  if (!userId || !parkingLotId || !slot || !vehicleType || !startTime || !endTime) {
+    return res.status(400).json({ 
+      message: "กรุณากรอกข้อมูลให้ครบถ้วน" 
+    });
+  }
+
+  if (isNaN(userId) || isNaN(parkingLotId) || isNaN(slot)) {
+    return res.status(400).json({ 
+      message: "ข้อมูลตัวเลขไม่ถูกต้อง" 
+    });
+  }
+
+  if (!['Car', 'Motorcycle'].includes(vehicleType)) {
+    return res.status(400).json({ 
+      message: "ประเภทยานพาหนะไม่ถูกต้อง" 
+    });
+  }
+
+  // Validate date format
+  if (!moment(startTime).isValid() || !moment(endTime).isValid()) {
+    return res.status(400).json({ 
+      message: "รูปแบบวันที่และเวลาไม่ถูกต้อง" 
+    });
+  }
 
   const formattedStartTime = moment(startTime).format("YYYY-MM-DD HH:mm:ss");
   const formattedEndTime = moment(endTime).format("YYYY-MM-DD HH:mm:ss");
@@ -120,6 +157,7 @@ app.post("/api/reserve", (req, res) => {
     return res.status(400).json({ message: "เวลาเข้าไม่สามารถเกินเวลาออกได้" });
   }
 
+  // Check for time conflicts
   const checkQuery = `
     SELECT * FROM reservations 
     WHERE parking_lot_id = ? AND slot = ? 
@@ -142,7 +180,7 @@ app.post("/api/reserve", (req, res) => {
     (err, results) => {
       if (err) {
         console.error("Error checking reservations:", err);
-        return res.status(500).json({ message: "Server error" });
+        return res.status(500).json({ message: "เกิดข้อผิดพลาดในการตรวจสอบการจอง" });
       }
 
       if (results.length > 0) {
@@ -151,6 +189,7 @@ app.post("/api/reserve", (req, res) => {
         });
       }
 
+      // Check user role and vehicle type permissions
       const checkRoleQuery = `
         SELECT p.allowed_roles, u.role, p.vehicle_type 
         FROM parking_lots p
@@ -161,11 +200,11 @@ app.post("/api/reserve", (req, res) => {
       db.query(checkRoleQuery, [userId, parkingLotId], (err, roleResults) => {
         if (err) {
           console.error("Error checking user role:", err);
-          return res.status(500).json({ message: "Server error" });
+          return res.status(500).json({ message: "เกิดข้อผิดพลาดในการตรวจสอบสิทธิ์" });
         }
 
         if (roleResults.length === 0) {
-          return res.status(400).json({ message: "Parking lot not found" });
+          return res.status(400).json({ message: "ไม่พบข้อมูลที่จอดรถหรือผู้ใช้" });
         }
 
         const {
@@ -196,6 +235,7 @@ app.post("/api/reserve", (req, res) => {
           });
         }
 
+        // Insert reservation
         const insertQuery = `
           INSERT INTO reservations (user_id, parking_lot_id, slot, vehicle_type, start_time, end_time) 
           VALUES (?, ?, ?, ?, ?, ?)
@@ -213,11 +253,14 @@ app.post("/api/reserve", (req, res) => {
           (err, result) => {
             if (err) {
               console.error("Reservation failed:", err);
-              return res
-                .status(500)
-                .json({ message: "จองที่จอดไม่สำเร็จ! ❌" });
+              return res.status(500).json({ 
+                message: "จองที่จอดไม่สำเร็จ! กรุณาลองใหม่อีกครั้ง" 
+              });
             }
-            res.status(200).json({ message: "จองที่จอดสำเร็จ! ✅" });
+            res.status(200).json({ 
+              message: "จองที่จอดสำเร็จ! ✅",
+              reservationId: result.insertId
+            });
           }
         );
       });
@@ -228,136 +271,77 @@ app.post("/api/reserve", (req, res) => {
 // API สำหรับยกเลิกการจอง
 app.delete("/api/reserve/:id", (req, res) => {
   const { id } = req.params;
+  
+  // Input validation
+  if (!id || isNaN(id)) {
+    return res.status(400).json({ message: "ID การจองไม่ถูกต้อง" });
+  }
+
   const query = "DELETE FROM reservations WHERE id = ?";
   db.query(query, [id], (err, results) => {
     if (err) {
       console.error("Error deleting reservation:", err);
-      return res.status(500).json({ message: "Server error" });
+      return res.status(500).json({ message: "เกิดข้อผิดพลาดในการยกเลิกการจอง" });
     }
-    res.send({ success: true });
+    
+    if (results.affectedRows === 0) {
+      return res.status(404).json({ message: "ไม่พบการจองที่ต้องการยกเลิก" });
+    }
+    
+    res.json({ success: true, message: "ยกเลิกการจองสำเร็จ" });
   });
 });
 
-app.get("/api/reservations", (req, res) => {
-  const { parking_lot_id } = req.query;
-  let query = `
-    SELECT r.id, u.username, r.slot, r.start_time, r.end_time, r.vehicle_type 
-    FROM reservations r
-    JOIN users u ON r.user_id = u.id
-  `;
-
-  const params = [];
-  if (parking_lot_id) {
-    query += " WHERE r.parking_lot_id = ?";
-    params.push(parking_lot_id);
+// API สำหรับเพิ่มผู้ใช้ใหม่ (Admin เท่านั้น)
+app.post("/api/admin/add-user", (req, res) => {
+  const { username, password, email, role } = req.body;
+  
+  // Input validation
+  if (!username || !password || !email || !role) {
+    return res.status(400).json({ 
+      message: "กรุณากรอกข้อมูลให้ครบถ้วน" 
+    });
   }
 
-  db.query(query, params, (err, results) => {
-    if (err) {
-      console.error("Error fetching reservations:", err);
-      return res.status(500).json({ message: "Server error" });
-    }
-
-    const reservationsWithBangkokTime = results.map((reservation) => {
-      return {
-        ...reservation,
-        start_time: moment
-          .utc(reservation.start_time)
-          .tz("Asia/Bangkok")
-          .format("YYYY-MM-DD HH:mm:ss"),
-        end_time: moment
-          .utc(reservation.end_time)
-          .tz("Asia/Bangkok")
-          .format("YYYY-MM-DD HH:mm:ss"),
-      };
+  if (!['student', 'teacher'].includes(role)) {
+    return res.status(400).json({ 
+      message: "บทบาทไม่ถูกต้อง" 
     });
+  }
 
-    console.log("Converted Bangkok Time:", reservationsWithBangkokTime);
-    res.json(reservationsWithBangkokTime);
-  });
-});
+  // Email validation
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    return res.status(400).json({ 
+      message: "รูปแบบอีเมลไม่ถูกต้อง" 
+    });
+  }
 
-app.get("/api/reservations_slot", (req, res) => {
-  const query = `
-    SELECT 
-      r.id, 
-      p.name AS lot_name,
-      r.slot, 
-      u.username, 
-      r.start_time, 
-      r.end_time, 
-      r.vehicle_type, 
-      r.status
-    FROM reservations r
-    LEFT JOIN users u ON r.user_id = u.id
-    LEFT JOIN parking_lots p ON r.parking_lot_id = p.id
-  `;
-
-  db.query(query, (err, results) => {
+  // Check if username already exists
+  const checkQuery = "SELECT id FROM users WHERE username = ? OR email = ?";
+  db.query(checkQuery, [username, email], (err, results) => {
     if (err) {
-      console.error("Database error:", err);
-      return res.status(500).json({ error: "Internal Server Error" });
+      console.error("Error checking existing user:", err);
+      return res.status(500).json({ message: "เกิดข้อผิดพลาดในการตรวจสอบผู้ใช้" });
     }
 
-    const reservationsWithBangkokTime = results.map((reservation) => ({
-      ...reservation,
-      start_time: moment
-        .utc(reservation.start_time)
-        .tz("Asia/Bangkok")
-        .format("YYYY-MM-DD HH:mm:ss"),
-      end_time: moment
-        .utc(reservation.end_time)
-        .tz("Asia/Bangkok")
-        .format("YYYY-MM-DD HH:mm:ss"),
-    }));
-
-    res.json(reservationsWithBangkokTime);
-  });
-});
-
-app.get("/api/user-reservations/:userId", (req, res) => {
-  const { userId } = req.params;
-  const query = `
-    SELECT * FROM reservations 
-    WHERE user_id = ? AND end_time > NOW()
-  `;
-
-  db.query(query, [userId], (err, results) => {
-    if (err) {
-      console.error("Error checking user reservations:", err);
-      return res.status(500).json({ message: "Server error" });
+    if (results.length > 0) {
+      return res.status(400).json({ 
+        message: "ชื่อผู้ใช้หรืออีเมลนี้มีอยู่แล้ว" 
+      });
     }
-    res.json(results);
-  });
-});
 
-app.post("/api/check-reservations", (req, res) => {
-  const now = moment().format("YYYY-MM-DD HH:mm:ss");
-
-  db.query(
-    "DELETE FROM reservations WHERE end_time <= ?",
-    [now],
-    (err, results) => {
+    const insertQuery = "INSERT INTO users (username, password, email, role) VALUES (?, ?, ?, ?)";
+    db.query(insertQuery, [username, password, email, role], (err, result) => {
       if (err) {
-        console.error("Error deleting expired reservations:", err);
-        return res.status(500).json({ message: "Error checking reservations" });
+        console.error("Error adding user:", err);
+        return res.status(500).json({ message: "เกิดข้อผิดพลาดในการเพิ่มผู้ใช้" });
       }
-
-      console.log(`Deleted ${results.affectedRows} expired reservations.`);
-      res.json({ success: true, deleted: results.affectedRows });
-    }
-  );
-});
-
-app.post("/api/admin/add-user", (req, res) => {
-  const { username, password, role } = req.body;
-  const query = "INSERT INTO users (username, password, role) VALUES (?, ?, ?)";
-  db.query(query, [username, password, role], (err, result) => {
-    if (err) {
-      console.error("Error adding user:", err);
-      return res.status(500).json({ message: "Error adding user" });
-    }
-    res.status(200).json({ message: "User added successfully" });
+      res.status(200).json({ 
+        message: "เพิ่มผู้ใช้สำเร็จ",
+        userId: result.insertId
+      });
+    });
   });
 });
 
