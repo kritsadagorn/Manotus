@@ -44,8 +44,9 @@ const Home = () => {
 
   const getParkingStatus = (parkingLot) => {
     const totalSlots = parkingLot.max_capacity;
+    // แก้ไขการนับจำนวนที่จอดที่ถูกจอง
     const reservedSlots = reservations.filter(
-      (reservation) => reservation.parking_lot_id === parkingLot.id
+      (reservation) => reservation.lot_name === parkingLot.name
     ).length;
     const availableSlots = totalSlots - reservedSlots;
 
@@ -148,21 +149,19 @@ const Home = () => {
                 <div className="grid grid-cols-5 gap-4 mt-4">
                   {Array.from({ length: totalSlots }, (_, i) => i + 1).map(
                     (slot) => {
+                      // แก้ไขการตรวจสอบว่าช่องจอดถูกจองหรือไม่
                       const isReserved = reservations.some(
                         (reservation) =>
-                          reservation.parking_lot_id === lot.id &&
+                          reservation.lot_name === lot.name &&
                           reservation.slot === slot
                       );
 
                       return (
                         <motion.div
                           key={slot}
-                          className="p-4 rounded-lg text-center text-white font-bold flex flex-col items-center"
-                          style={{
-                            backgroundColor: isReserved
-                              ? themeColors.reserved
-                              : themeColors.available,
-                          }}
+                          className={`p-4 rounded-lg text-center text-white font-bold flex flex-col items-center ${
+                            isReserved ? 'bg-red-500' : 'bg-green-500'
+                          }`}
                           initial={{ opacity: 0, scale: 0.8 }}
                           animate={{ opacity: 1, scale: 1 }}
                           whileHover={{ scale: 1.1 }}
